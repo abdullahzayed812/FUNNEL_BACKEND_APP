@@ -10,3 +10,16 @@ export enum ERRORS {
   DUPLICATE_EMAIL = "An account with this email already exists.",
   DUPLICATE_USERNAME = "An account with this username already exists.",
 }
+
+export class AppError extends Error {
+  public statusCode: number;
+
+  constructor(message: string, statusCode: number = 400) {
+    super(message);
+    this.statusCode = statusCode;
+    this.name = this.constructor.name;
+
+    // Capture stack trace (works in V8 engine)
+    Error.captureStackTrace(this, this.constructor);
+  }
+}

@@ -1,6 +1,8 @@
-import pool from "../configs/db";
+import { DBConfig } from "../configs/db";
 
-const createBrandingTable = async () => {
+const createBrandingTable = async (dbConfig: DBConfig) => {
+  const pool = dbConfig.getPool();
+
   try {
     // Create users table
     const createBrandingTableQuery = `

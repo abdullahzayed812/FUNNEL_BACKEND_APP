@@ -1,5 +1,3 @@
-import pool from "../configs/db";
-
 const createUserRolesTable = async () => {
   try {
     // Create users table
