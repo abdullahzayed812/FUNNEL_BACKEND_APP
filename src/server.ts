@@ -24,11 +24,14 @@ export async function createServer(logRequests: boolean = true) {
     app.use(requestLoggerMiddleware);
   }
 
-  const db = DBConfig.getInstance().getPool();
+  const db = DBConfig.getInstance();
+  const pool = db.getPool();
 
-  const userModel = new UserModel(db);
+  const userModel = new UserModel(pool);
   const userService = new UserService(userModel);
   const userController = new UserController(userService);
+
+  // console.log(db.query("select * from users"));
 
   const authMiddleware = new AuthMiddleware(userModel);
 
@@ -38,9 +41,9 @@ export async function createServer(logRequests: boolean = true) {
 
     [Endpoints.signIn]: userController.signInController,
     [Endpoints.signUp]: userController.signUpController,
-    [Endpoints.getUser]: userController.getUserController,
-    [Endpoints.getCurrentUser]: userController.getUserController,
-    [Endpoints.updateCurrentUser]: userController.updateUserController,
+    // [Endpoints.getUser]: userController.getUserController,
+    // [Endpoints.getCurrentUser]: userController.getUserController,
+    // [Endpoints.updateCurrentUser]: userController.updateUserController,
   };
 
   Object.keys(Endpoints).forEach((entry) => {

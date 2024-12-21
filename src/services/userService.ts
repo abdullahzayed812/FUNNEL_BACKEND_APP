@@ -4,6 +4,7 @@ import { User } from "../types/entities";
 import { signJwt } from "../utils/auth";
 import { getSalt } from "../utils/env";
 import { AppError, ERRORS } from "../utils/errors";
+import { formatDate } from "../utils/date";
 
 export class UserService {
   private userModel: UserModel;
@@ -13,8 +14,8 @@ export class UserService {
   }
 
   // Sign up logic
-  async signUp(email: string, username: string, password: string, firstName: string, lastName: string) {
-    if (!email || !username || !password || !firstName || !lastName) {
+  async signUp(email: string, username: string, password: string) {
+    if (!email || !username || !password) {
       throw new AppError(ERRORS.USER_DATA_REQUIRED, 400);
     }
 
@@ -32,45 +33,70 @@ export class UserService {
       id: crypto.randomUUID(),
       email,
       username,
+      role: "Agency",
       password: this.hashPassword(password),
+      createdAt: formatDate(),
     };
 
-    return await this.userModel.createUser(user);
+    await this.userModel.createUser(user);
+
+    const jwt = signJwt({ userId: user.id, role: user.role });
+
+    return {
+      accessToken: jwt,
+      user: { id: user.id, email: user.email, username: user.username, createdAt: user.createdAt },
+    };
   }
 
   // Sign in logic
   async signIn(login: string, password: string) {
-    const user = await this.userModel.getUserByEmailOrUsername(login);
-
-    if (!user || user.password !== this.hashPassword(password)) {
-      throw new Error("Invalid login credentials");
+    if (!login || !password) {
+      throw new AppError(ERRORS.INVALID_USER_DATA, 400);
     }
 
-    const jwt = signJwt({ userId: user.id });
+    const userExists = (await this.userModel.getUserByEmail(login)) || (await this.userModel.getUserByUsername(login));
 
-    return { user, accessToken: jwt };
-  }
-
-  // Get user by ID
-  async getUserById(id: string) {
-    const user = await this.userModel.getUserById(id);
-    if (!user) {
-      throw new Error("User not found");
-    }
-    return user;
-  }
-
-  // Update user details
-  async updateUser(id: string, username: string, firstName: string, lastName: string) {
-    const user = await this.userModel.getUserById(id);
-    if (!user) {
-      throw new Error("User not found");
+    if (!userExists) {
+      throw new AppError(ERRORS.USER_NOT_FOUND, 400);
     }
 
-    // Update user details
-    const updated = await this.userModel.updateUser(id, { username });
-    return updated;
+    if (userExists.password !== this.hashPassword(password)) {
+      throw new AppError(ERRORS.INCORRECT_PASSWORD, 403);
+    }
+
+    const jwt = signJwt({ userId: userExists.id, role: userExists.role });
+
+    return {
+      user: {
+        id: userExists.id,
+        email: userExists.email,
+        username: userExists.username,
+        createdAt: userExists.createdAt,
+      },
+      accessToken: jwt,
+    };
   }
+
+  // // Get user by ID
+  // async getUserById(id: string) {
+  //   const user = await this.userModel.getUserById(id);
+  //   if (!user) {
+  //     throw new Error("User not found");
+  //   }
+  //   return user;
+  // }
+
+  // // Update user details
+  // async updateUser(id: string, username: string, firstName: string, lastName: string) {
+  //   const user = await this.userModel.getUserById(id);
+  //   if (!user) {
+  //     throw new Error("User not found");
+  //   }
+
+  //   // Update user details
+  //   const updated = await this.userModel.updateUser(id, { username });
+  //   return updated;
+  // }
 
   private hashPassword(password: string) {
     return crypto.pbkdf2Sync(password, getSalt(), 100, 64, "sha512").toString("hex");

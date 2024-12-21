@@ -2,6 +2,7 @@ import { NextFunction, Request, RequestHandler, Response } from "express";
 
 export interface JwtPayload {
   userId: string;
+  role: string;
 }
 
 export type WithError<T> = T & { error: string };

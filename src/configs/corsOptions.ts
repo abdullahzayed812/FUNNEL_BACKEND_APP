@@ -1,10 +1,6 @@
 import { CorsOptions } from "cors";
 
-export const allowedOrigins = [
-  "https://www.yoursite.com",
-  "http://127.0.0.1:5500",
-  "http://localhost:8081",
-];
+export const allowedOrigins = ["https://www.yoursite.com", "http://127.0.0.1:5500", "http://localhost:8081"];
 
 export const corsOptions: CorsOptions = {
   origin: (origin, callback) => {

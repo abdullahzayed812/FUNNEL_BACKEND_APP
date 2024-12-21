@@ -1,8 +1,9 @@
 import { ExpressHandler, JwtPayload } from "../types/apis";
-import { TokenExpiredError, VerifyErrors } from "jsonwebtoken";
+import { VerifyErrors } from "jsonwebtoken";
 import { verifyJwt } from "../utils/auth";
 import { ERRORS } from "../utils/errors";
 import { UserModel } from "../models/user";
+import jwt from "jsonwebtoken";
 
 export class AuthMiddleware {
   private userModel: UserModel;
@@ -24,6 +25,7 @@ export class AuthMiddleware {
       jwtPayload = verifyJwt(token);
     } catch (error) {
       const verifyError = error as VerifyErrors;
+      const { TokenExpiredError } = jwt;
 
       if (verifyError instanceof TokenExpiredError) {
         return res.status(401).send({ error: ERRORS.TOKEN_EXPIRED });
@@ -39,12 +41,13 @@ export class AuthMiddleware {
     }
 
     res.locals.userId = user.id;
+    res.locals.role = user.role;
 
     return next();
   };
 
   public enforceJwt: ExpressHandler<any, any> = async (_, res, next) => {
-    if (!res.locals.userId) {
+    if (!res.locals.userId || !res.locals.role) {
       return res.sendStatus(401); // Unauthorized
     }
 

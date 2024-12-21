@@ -310,20 +310,20 @@ CREATE TABLE ad_text (
 --   ('order_1', '2024-01-01 00:00:00', 'Campaign 1', 'Retail', 'Clothing', 'Pending', 1000.00, 'Unpaid', '2024-01-01 00:00:00', '2024-01-01 00:00:00', 'user_1', 'user_2', 'project_1'),
 --   ('order_2', '2024-02-01 00:00:00', 'Campaign 2', 'Technology', 'Software', 'In Progress', 1500.00, 'Paid', '2024-02-01 00:00:00', '2024-02-01 00:00:00', 'user_2', 'user_1', 'project_2');
 
--- SELECT * FROM user_roles;
--- SELECT * FROM facebook_authentication;
--- SELECT * FROM users;
--- SELECT * FROM campaigns;
--- SELECT * FROM personas;
--- SELECT * FROM campaign_personas;
--- SELECT * FROM adsets;
--- SELECT * FROM ads;
--- SELECT * FROM projects;
--- SELECT * FROM templates;
--- SELECT * FROM template_text;
--- SELECT * FROM images;
--- SELECT * FROM branding;
--- SELECT * FROM orders;
+SELECT * FROM user_roles;
+SELECT * FROM facebook_authentication;
+SELECT * FROM users;
+SELECT * FROM campaigns;
+SELECT * FROM personas;
+SELECT * FROM campaign_personas;
+SELECT * FROM adsets;
+SELECT * FROM ads;
+SELECT * FROM projects;
+SELECT * FROM templates;
+SELECT * FROM template_text;
+SELECT * FROM images;
+SELECT * FROM branding;
+SELECT * FROM orders;
 
 -- -- Add project id to the campaign table.
 
