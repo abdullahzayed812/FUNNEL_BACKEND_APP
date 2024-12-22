@@ -1,5 +1,5 @@
 import crypto from "crypto";
-import { UserModel } from "../models/user";
+import { UserModel } from "../models/userModel";
 import { User } from "../types/entities";
 import { signJwt } from "../utils/auth";
 import { getSalt } from "../utils/env";
@@ -76,27 +76,6 @@ export class UserService {
       accessToken: jwt,
     };
   }
-
-  // // Get user by ID
-  // async getUserById(id: string) {
-  //   const user = await this.userModel.getUserById(id);
-  //   if (!user) {
-  //     throw new Error("User not found");
-  //   }
-  //   return user;
-  // }
-
-  // // Update user details
-  // async updateUser(id: string, username: string, firstName: string, lastName: string) {
-  //   const user = await this.userModel.getUserById(id);
-  //   if (!user) {
-  //     throw new Error("User not found");
-  //   }
-
-  //   // Update user details
-  //   const updated = await this.userModel.updateUser(id, { username });
-  //   return updated;
-  // }
 
   private hashPassword(password: string) {
     return crypto.pbkdf2Sync(password, getSalt(), 100, 64, "sha512").toString("hex");

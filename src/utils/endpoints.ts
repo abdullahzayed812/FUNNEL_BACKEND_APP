@@ -10,11 +10,8 @@ export enum Endpoints {
 
   signIn = "signIn",
   signUp = "signUp",
-  // getUser = "getUser",
-  // getCurrentUser = "getCurrentUser",
-  // updateCurrentUser = "updateCurrentUser",
 
-  // listProjects = "listProjects",
+  listProjects = "listProjects",
   // getProject = "getProject",
   // createProject = "createProject",
   // deleteProject = "deleteProject",
@@ -38,11 +35,8 @@ export const ENDPOINT_CONFIGS: { [key in Endpoints]: EndpointConfig } = {
 
   [Endpoints.signIn]: { method: "post", url: "/api/v1/signIn", sensitive: true },
   [Endpoints.signUp]: { method: "post", url: "/api/v1/signUp", sensitive: true },
-  // [Endpoints.getUser]: { method: "get", url: "/api/v1/users/:id" },
-  // [Endpoints.getCurrentUser]: { method: "get", url: "/api/v1/users", auth: true },
-  // [Endpoints.updateCurrentUser]: { method: "patch", url: "/api/v1/users", auth: true },
 
-  // [Endpoints.listProjects]: { method: "get", url: "/api/v1/projects" },
+  [Endpoints.listProjects]: { method: "get", url: "/api/v1/projects" },
   // [Endpoints.getProject]: { method: "get", url: "/api/v1/projects/:id" },
   // [Endpoints.createProject]: { method: "post", url: "/api/v1/projects", auth: true },
   // [Endpoints.deleteProject]: { method: "delete", url: "/api/v1/projects", auth: true },

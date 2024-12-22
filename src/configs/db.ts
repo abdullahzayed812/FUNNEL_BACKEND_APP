@@ -8,7 +8,7 @@ export class DBConfig {
   private constructor() {
     this.pool = mysql.createPool({
       host: process.env.DB_HOST || "localhost",
-      user: process.env.USER || "abdo",
+      user: process.env.DB_USER || "abdo",
       password: process.env.DB_PASSWORD || "password",
       database: process.env.DB_NAME || "funnel_db",
       waitForConnections: true, // Wait for an available connection if all are in use

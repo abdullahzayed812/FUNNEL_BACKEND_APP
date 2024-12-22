@@ -1,9 +1,3 @@
--- Roles Table
-CREATE TABLE IF NOT EXISTS user_roles (
-    id     VARCHAR(255) PRIMARY KEY,
-    name   VARCHAR(255) NOT NULL UNIQUE
-);
-
 -- Facebook Authentication
 CREATE TABLE IF NOT EXISTS facebook_authentication (
     id      VARCHAR(255) PRIMARY KEY,
@@ -17,9 +11,8 @@ CREATE TABLE IF NOT EXISTS users (
     email                      VARCHAR(255) NOT NULL UNIQUE,
     password                   VARCHAR(255) NOT NULL,
     created_at                 TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    role_id                    VARCHAR(255) NOT NULL,
+    role                       VARCHAR(255) NOT NULL,
     facebook_authentication_id VARCHAR(255),
-    FOREIGN KEY (role_id) REFERENCES user_roles(id),
     FOREIGN KEY (facebook_authentication_id) REFERENCES facebook_authentication(id)
 );
 
@@ -102,7 +95,9 @@ CREATE TABLE IF NOT EXISTS templates (
     is_selected             BOOLEAN,
     created_at              TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     project_id              VARCHAR(255) NOT NULL,
-    FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
+    user_id                 VARCHAR(255) NOT NULL,
+    FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
 -- Props Table (Properties of Templates)
@@ -136,7 +131,9 @@ CREATE TABLE IF NOT EXISTS images (
     image_type      ENUM('Default', 'Branded', 'Customized') NOT NULL,
     is_selected     BOOLEAN,
     project_id      VARCHAR(255) NOT NULL,
-    FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
+    user_id                 VARCHAR(255) NOT NULL,
+    FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS videos (
@@ -149,15 +146,16 @@ CREATE TABLE IF NOT EXISTS videos (
 );
 
 CREATE TABLE IF NOT EXISTS branding (
-    id VARCHAR(255) PRIMARY KEY,
-    project_id VARCHAR(255) UNIQUE NOT NULL,
-    primary_color VARCHAR(7),
-    secondary_color VARCHAR(7),
-    additional_color VARCHAR(7),
-    primary_font    VARCHAR(25),
-    secondary_font VARCHAR(25),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    id                  VARCHAR(255) PRIMARY KEY,
+    project_id          VARCHAR(255) UNIQUE NOT NULL,
+    primary_color       VARCHAR(7),
+    secondary_color     VARCHAR(7),
+    additional_color    VARCHAR(7),
+    primary_font        VARCHAR(25),
+    secondary_font      VARCHAR(25),
+    created_at          TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at          TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    user_id             VARCHAR(255) NOT NULL,
     FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
 );
 
@@ -174,11 +172,13 @@ CREATE TABLE IF NOT EXISTS orders (
     created_at          TIMESTAMP DEFAULT CURRENT_TIMESTAMP,  
     updated_at          TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP, 
     campaign_manager_id VARCHAR(255) NOT NULL,  
-    end_user_id         VARCHAR(255) NOT NULL,  
+    user_id             VARCHAR(255) NOT NULL,  
     project_id          VARCHAR(255) NOT NULL,
     FOREIGN KEY (campaign_manager_id) REFERENCES users(id),  
-    FOREIGN KEY (end_user_id) REFERENCES users(id),  
-    FOREIGN KEY (project_id) REFERENCES projects(id)  
+    FOREIGN KEY (user_id) REFERENCES users(id),  
+    FOREIGN KEY (project_id) REFERENCES projects(id),
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+
 );
 
 ----------------------------------------------------------

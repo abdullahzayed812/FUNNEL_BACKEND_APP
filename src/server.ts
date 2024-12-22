@@ -7,7 +7,7 @@ import { credentialsMiddleware } from "./middleware/credentialsMiddleware";
 import { UserController } from "./controllers/userController";
 import { DBConfig } from "./configs/db";
 import { UserService } from "./services/userService";
-import { UserModel } from "./models/user";
+import { UserModel } from "./models/userModel";
 import { ENDPOINT_CONFIGS, Endpoints } from "./utils/endpoints";
 import { ExpressHandler } from "./types/apis";
 import { AuthMiddleware } from "./middleware/authMiddleware";

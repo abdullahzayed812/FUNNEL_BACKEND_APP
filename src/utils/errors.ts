@@ -9,6 +9,8 @@ export enum ERRORS {
   USER_ID_NOT_SENT = "You should send user id.",
   DUPLICATE_EMAIL = "An account with this email already exists.",
   DUPLICATE_USERNAME = "An account with this username already exists.",
+
+  ACCESS_NOT_ALLOWED = "Access is not allowed.",
 }
 
 export class AppError extends Error {
