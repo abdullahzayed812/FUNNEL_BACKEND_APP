@@ -1,6 +1,6 @@
 import { ProjectModel } from "../models/projectModel";
 import { UserModel } from "../models/userModel";
-import { AppError, ERRORS } from "../utils/errors";
+import { AppError, ERRORS } from "../configs/error";
 
 export class ProjectService {
   private projectModel: ProjectModel;

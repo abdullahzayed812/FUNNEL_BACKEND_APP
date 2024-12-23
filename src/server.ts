@@ -8,13 +8,18 @@ import { UserController } from "./controllers/userController";
 import { DBConfig } from "./configs/db";
 import { UserService } from "./services/userService";
 import { UserModel } from "./models/userModel";
-import { ENDPOINT_CONFIGS, Endpoints } from "./utils/endpoints";
+import { ENDPOINT_CONFIGS, Endpoints } from "./configs/endpoints";
 import { ExpressHandler } from "./types/apis";
 import { AuthMiddleware } from "./middleware/authMiddleware";
 import expressAsyncHandler from "express-async-handler";
 import { ProjectModel } from "./models/projectModel";
 import { ProjectService } from "./services/projectService";
 import { ProjectController } from "./controllers/projectController";
+import { UploadFileController } from "./controllers/uploadFileController";
+import path from "node:path";
+
+const __filename = new URL(import.meta.url).pathname;
+const __dirname = path.dirname(__filename);
 
 export async function createServer(logRequests: boolean = true) {
   const app = express();
@@ -22,6 +27,7 @@ export async function createServer(logRequests: boolean = true) {
   app.use(express.json());
   app.use(cors(corsOptions));
   app.use(credentialsMiddleware);
+  app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
   if (logRequests) {
     app.use(requestLoggerMiddleware);
@@ -38,6 +44,8 @@ export async function createServer(logRequests: boolean = true) {
   const projectService = new ProjectService(projectModel, userModel);
   const projectController = new ProjectController(projectService);
 
+  const uploadImageController = new UploadFileController();
+
   const authMiddleware = new AuthMiddleware(userModel);
 
   // Map endpoints to controllers
@@ -48,6 +56,7 @@ export async function createServer(logRequests: boolean = true) {
     [Endpoints.signUp]: userController.signUpController,
     [Endpoints.listProjects]: projectController.listProjectsController,
     [Endpoints.getProjectData]: projectController.getProjectDataController,
+    [Endpoints.uploadImage]: uploadImageController.uploadFile,
   };
 
   Object.keys(Endpoints).forEach((entry) => {

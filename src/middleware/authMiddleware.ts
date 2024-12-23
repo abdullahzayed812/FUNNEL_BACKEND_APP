@@ -1,7 +1,7 @@
 import { ExpressHandler, JwtPayload } from "../types/apis";
 import { VerifyErrors } from "jsonwebtoken";
-import { verifyJwt } from "../utils/auth";
-import { ERRORS } from "../utils/errors";
+import { verifyJwt } from "../helpers/authentication";
+import { ERRORS } from "../configs/error";
 import { UserModel } from "../models/userModel";
 import jwt from "jsonwebtoken";
 

@@ -1,10 +1,10 @@
 import crypto from "crypto";
 import { UserModel } from "../models/userModel";
 import { User } from "../types/entities";
-import { signJwt } from "../utils/auth";
-import { getSalt } from "../utils/env";
-import { AppError, ERRORS } from "../utils/errors";
-import { formatDate } from "../utils/date";
+import { signJwt } from "../helpers/authentication";
+import { getSalt } from "../helpers/env";
+import { AppError, ERRORS } from "../configs/error";
+import { formatDate } from "../helpers/dateFormat";
 
 export class UserService {
   private userModel: UserModel;
