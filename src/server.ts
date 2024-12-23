@@ -12,6 +12,9 @@ import { ENDPOINT_CONFIGS, Endpoints } from "./utils/endpoints";
 import { ExpressHandler } from "./types/apis";
 import { AuthMiddleware } from "./middleware/authMiddleware";
 import expressAsyncHandler from "express-async-handler";
+import { ProjectModel } from "./models/projectModel";
+import { ProjectService } from "./services/projectService";
+import { ProjectController } from "./controllers/projectController";
 
 export async function createServer(logRequests: boolean = true) {
   const app = express();
@@ -31,24 +34,25 @@ export async function createServer(logRequests: boolean = true) {
   const userService = new UserService(userModel);
   const userController = new UserController(userService);
 
-  // console.log(db.query("select * from users"));
+  const projectModel = new ProjectModel(pool);
+  const projectService = new ProjectService(projectModel, userModel);
+  const projectController = new ProjectController(projectService);
 
   const authMiddleware = new AuthMiddleware(userModel);
 
   // Map endpoints to controllers
-  const HANDLERS: { [key in Endpoints]: ExpressHandler } = {
+  const CONTROLLERS: { [key in Endpoints]: ExpressHandler } = {
     [Endpoints.healthz]: (_, res) => res.send({ status: "ok!" }),
 
     [Endpoints.signIn]: userController.signInController,
     [Endpoints.signUp]: userController.signUpController,
-    // [Endpoints.getUser]: userController.getUserController,
-    // [Endpoints.getCurrentUser]: userController.getUserController,
-    // [Endpoints.updateCurrentUser]: userController.updateUserController,
+    [Endpoints.listProjects]: projectController.listProjectsController,
+    [Endpoints.getProjectData]: projectController.getProjectDataController,
   };
 
   Object.keys(Endpoints).forEach((entry) => {
     const config = ENDPOINT_CONFIGS[entry as Endpoints];
-    const handler = HANDLERS[entry as Endpoints];
+    const handler = CONTROLLERS[entry as Endpoints];
 
     config.auth
       ? app[config.method](config.url, authMiddleware.jwtParse, authMiddleware.enforceJwt, expressAsyncHandler(handler))

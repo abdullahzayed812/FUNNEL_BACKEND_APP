@@ -11,7 +11,7 @@ export class ProjectService {
     this.userModel = userModel;
   }
 
-  public async listProjects(userId: string, userSessionId: string) {
+  public async listProjects(userId: string) {
     if (!userId) {
       throw new AppError(ERRORS.USER_ID_NOT_SENT);
     }
@@ -22,10 +22,20 @@ export class ProjectService {
       throw new AppError(ERRORS.USER_NOT_FOUND);
     }
 
-    if (userExists.id !== userSessionId) {
-      throw new AppError(ERRORS.ACCESS_NOT_ALLOWED);
+    return await this.projectModel.listProjects(userId);
+  }
+
+  public async getProjectData(projectId: string, userId: string) {
+    if (!projectId) {
+      throw new AppError(ERRORS.PROJECT_ID_NOT_SENT);
     }
 
-    return await this.projectModel.listAllProjects(userId);
+    const projectExists = await this.projectModel.getProjectById(projectId);
+
+    if (!projectExists) {
+      throw new AppError(ERRORS.PROJECT_NOT_FOUND);
+    }
+
+    return await this.projectModel.getProjectData(projectId, userId);
   }
 }

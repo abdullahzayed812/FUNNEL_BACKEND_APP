@@ -11,6 +11,9 @@ export enum ERRORS {
   DUPLICATE_USERNAME = "An account with this username already exists.",
 
   ACCESS_NOT_ALLOWED = "Access is not allowed.",
+
+  PROJECT_ID_NOT_SENT = "You should send project id.",
+  PROJECT_NOT_FOUND = "Project not found.",
 }
 
 export class AppError extends Error {

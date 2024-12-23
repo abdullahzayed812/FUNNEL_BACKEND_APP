@@ -7,76 +7,118 @@ export class ProjectModel {
     this.pool = pool;
   }
 
-  public async listAllProjects(userId: string) {
+  public async listProjects(userId: string) {
     const connection = await this.pool.getConnection();
 
     try {
-      const sqlQuery = `SELECT 
-            u.id AS user_id,
-            u.username,
-            u.email,
-            p.id AS project_id,
-            p.name AS project_name,
-            p.description AS project_description,
-            p.website AS project_website,
-            t.id AS template_id,
-            t.name AS template_name,
-            t.template_type,
-            t.frame_svg,
-            t.default_primary,
-            t.default_secondary_color,
-            t.is_selected AS template_is_selected,
-            tt.id AS template_text_id,
-            tt.name AS template_text_name,
-            tt.text_content AS template_text_content,
-            tt.font_size,
-            tt.font_family,
-            tt.font_weight,
-            tt.text_decoration,
-            tt.font_style,
-            tt.border_radius,
-            tt.border_width,
-            tt.border_style,
-            tt.border_color,
-            tt.container_color,
-            tt.text_color,
-            tt.language,
-            tt.x_coordinate,
-            tt.y_coordinate,
-            tt.color AS template_text_color,
-            i.id AS image_id,
-            i.file_path AS image_file_path,
-            i.image_type AS image_type,
-            i.is_selected AS image_is_selected,
-            v.id AS video_id,
-            v.file_path AS video_file_path,
-            v.video_type AS video_type,
-            v.is_selected AS video_is_selected,
-            b.id AS branding_id,
-            b.primary_color,
-            b.secondary_color,
-            b.additional_color,
-            b.primary_font,
-            b.secondary_font,
-            b.created_at AS branding_created_at,
-            b.updated_at AS branding_updated_at
+      const sqlQueryProjectsData = `
+        SELECT 
+          p.id AS project_id,
+          p.name AS project_name,
+          p.description AS project_description,
+          p.website AS project_website
         FROM users u
-        -- Join projects that belong to the user
-        LEFT JOIN projects p ON p.id IN (SELECT project_id FROM branding WHERE user_id = u.id)
-        -- Join templates related to both the user and the project
-        LEFT JOIN templates t ON t.user_id = u.id AND t.project_id = p.id
-        -- Join template_text related to each template
-        LEFT JOIN template_text tt ON tt.template_id = t.id
-        -- Join images related to both the user and the project
-        LEFT JOIN images i ON i.user_id = u.id AND i.project_id = p.id
-        -- Join videos related to both the user and the project
-        LEFT JOIN videos v ON v.user_id = u.id AND v.project_id = p.id
-        -- Join branding related to the user and project
-        LEFT JOIN branding b ON b.user_id = u.id AND b.project_id = p.id
-        WHERE u.id = ?;
+        LEFT JOIN projects p ON p.user_id = u.id
+        WHERE u.id = ?
       `;
+      const [projects] = await connection.query(sqlQueryProjectsData, [userId]);
 
-      const [result] = await connection.query(sqlQuery, [userId]);
+      return projects;
+    } finally {
+      connection.release();
+    }
+  }
+
+  public async getProjectData(projectId: string, userId: string) {
+    const connection = await this.pool.getConnection();
+
+    try {
+      const sqlQueryImage = `
+        SELECT 
+          i.id AS image_id,
+          i.file_path,
+          i.image_type,
+          i.is_selected,
+          i.project_id,
+          i.user_id
+        FROM images i
+        INNER JOIN projects p ON i.project_id = p.id
+        INNER JOIN users u ON i.user_id = u.id
+        WHERE i.project_id = ?
+          AND i.user_id = ?
+      `;
+      const [images] = await connection.query(sqlQueryImage, [projectId, userId]);
+
+      const sqlQueryTemplates = `
+        SELECT 
+          t.id AS template_id,
+          t.name AS template_name,
+          t.frame_svg,
+          t.default_primary,
+          t.default_secondary_color,
+          t.is_selected,
+          t.created_at,
+          t.project_id,
+          t.user_id,
+          tt.id AS template_text_id,
+          tt.name AS template_text_name,
+          tt.font_size,
+          tt.font_family,
+          tt.font_weight,
+          tt.text_decoration,
+          tt.font_style,
+          tt.border_radius,
+          tt.border_width,
+          tt.border_style,
+          tt.border_color,
+          tt.container_color,
+          tt.text_color,
+          tt.language,
+          tt.x_coordinate,
+          tt.y_coordinate,
+          tt.color AS template_text_color
+        FROM templates t
+        INNER JOIN projects p ON t.project_id = p.id
+        INNER JOIN users u ON t.user_id = u.id
+        LEFT JOIN template_text tt ON t.id = tt.template_id
+        WHERE t.project_id = ?
+          AND t.user_id = ?
+      `;
+      const [templates] = await connection.query(sqlQueryTemplates, [projectId, userId]);
+
+      const sqlQueryBranding = `
+        SELECT 
+         b.id,
+         b.primary_color,
+         b.secondary_color,
+         b.additional_color,
+         b.primary_font,
+         b.secondary_font,
+         b.created_at,
+         b.updated_at,
+         b.project_id,
+         b.user_id
+        FROM branding b
+        INNER JOIN projects p ON b.project_id = p.id
+        INNER JOIN users u ON b.user_id = u.id
+        WHERE b.project_id = ?
+          AND b.user_id = ?
+      `;
+      const [branding] = await connection.query(sqlQueryBranding, [projectId, userId]);
+
+      return { images, templates, branding };
+    } finally {
+      connection.release();
+    }
+  }
+
+  public async getProjectById(projectId: string) {
+    const connection = await this.pool.getConnection();
+
+    try {
+      const sqlQuery = `SELECT p.name FROM projects p WHERE p.id = ?`;
+
+      const [result] = await connection.query(sqlQuery, [projectId]);
       return result;
     } finally {
       connection.release();

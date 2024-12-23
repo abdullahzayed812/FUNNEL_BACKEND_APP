@@ -82,6 +82,8 @@ CREATE TABLE IF NOT EXISTS projects (
     name        VARCHAR(255) NOT NULL,
     description VARCHAR(255) NOT NULL,
     website     VARCHAR(255) NOT NULL
+    user_id     VARCHAR(255) NOT NULL,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
 -- Templates Table

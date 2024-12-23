@@ -12,7 +12,7 @@ export enum Endpoints {
   signUp = "signUp",
 
   listProjects = "listProjects",
-  // getProject = "getProject",
+  getProjectData = "getProjectData",
   // createProject = "createProject",
   // deleteProject = "deleteProject",
 
@@ -36,8 +36,8 @@ export const ENDPOINT_CONFIGS: { [key in Endpoints]: EndpointConfig } = {
   [Endpoints.signIn]: { method: "post", url: "/api/v1/signIn", sensitive: true },
   [Endpoints.signUp]: { method: "post", url: "/api/v1/signUp", sensitive: true },
 
-  [Endpoints.listProjects]: { method: "get", url: "/api/v1/projects" },
-  // [Endpoints.getProject]: { method: "get", url: "/api/v1/projects/:id" },
+  [Endpoints.listProjects]: { method: "get", url: "/api/v1/projects", auth: true },
+  [Endpoints.getProjectData]: { method: "get", url: "/api/v1/projects/:id", auth: true },
   // [Endpoints.createProject]: { method: "post", url: "/api/v1/projects", auth: true },
   // [Endpoints.deleteProject]: { method: "delete", url: "/api/v1/projects", auth: true },
 
