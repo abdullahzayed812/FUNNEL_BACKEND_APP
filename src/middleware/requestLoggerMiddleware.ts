@@ -6,7 +6,7 @@ import path from "path";
 import { ExpressHandler } from "../types/apis";
 
 export const requestLoggerMiddleware: RequestHandler = (req, res, next) => {
-  console.log(req.method, req.path, " - body: ", req.body, " - params", req.params);
+  console.log(req.method, req.path, " - body: ", req.body);
   next();
 };
 

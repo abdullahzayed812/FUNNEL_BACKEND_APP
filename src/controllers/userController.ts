@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { UserService } from "../services/userService";
 import { ExpressHandler } from "../types/apis";
+import { AppError } from "../configs/error";
 
 export class UserController {
   private userService: UserService;
@@ -17,7 +18,13 @@ export class UserController {
 
       res.status(201).send({ user, accessToken });
     } catch (error: any) {
-      res.status(403).send({ error: error.message });
+      if (error instanceof AppError) {
+        // Specific error handling (e.g., validation, authentication issues)
+        res.status(error.statusCode).send({ error: error.message });
+      } else {
+        // Unknown errors (server issues)
+        res.status(500).send({ error: "Internal Server Error" });
+      }
     }
   };
 
@@ -29,7 +36,11 @@ export class UserController {
 
       res.status(200).send({ user, accessToken });
     } catch (error: any) {
-      res.status(400).send({ error: error.message });
+      if (error instanceof AppError) {
+        res.status(error.statusCode).send({ error: error.message });
+      } else {
+        res.status(500).send({ error: "Internal Server Error" });
+      }
     }
   };
 }

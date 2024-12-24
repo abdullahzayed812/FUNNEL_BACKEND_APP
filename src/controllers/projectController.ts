@@ -22,7 +22,11 @@ export class ProjectController {
     try {
       const { id } = req.params;
 
-      const { images, templates, branding } = await this.projectService.getProjectData(id, res.locals.userId);
+      const { images, templates, branding } = await this.projectService.getProjectData(
+        id,
+        res.locals.userId,
+        res.locals.userRole
+      );
 
       res.status(200).send({ images, templates, branding });
     } catch (error: any) {

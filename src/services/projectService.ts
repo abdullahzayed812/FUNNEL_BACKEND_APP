@@ -13,29 +13,29 @@ export class ProjectService {
 
   public async listProjects(userId: string) {
     if (!userId) {
-      throw new AppError(ERRORS.USER_ID_NOT_SENT);
+      throw new AppError(ERRORS.USER_ID_NOT_SENT, 400);
     }
 
     const userExists = await this.userModel.getUserById(userId);
 
     if (!userExists) {
-      throw new AppError(ERRORS.USER_NOT_FOUND);
+      throw new AppError(ERRORS.USER_NOT_FOUND, 400);
     }
 
     return await this.projectModel.listProjects(userId);
   }
 
-  public async getProjectData(projectId: string, userId: string) {
+  public async getProjectData(projectId: string, userId: string, userRole: string) {
     if (!projectId) {
-      throw new AppError(ERRORS.PROJECT_ID_NOT_SENT);
+      throw new AppError(ERRORS.PROJECT_ID_NOT_SENT, 400);
     }
 
     const projectExists = await this.projectModel.getProjectById(projectId);
 
     if (!projectExists) {
-      throw new AppError(ERRORS.PROJECT_NOT_FOUND);
+      throw new AppError(ERRORS.PROJECT_NOT_FOUND, 400);
     }
 
-    return await this.projectModel.getProjectData(projectId, userId);
+    return await this.projectModel.getProjectData(projectId, userId, userRole);
   }
 }

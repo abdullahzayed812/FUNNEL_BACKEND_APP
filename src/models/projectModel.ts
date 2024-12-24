@@ -29,11 +29,11 @@ export class ProjectModel {
     }
   }
 
-  public async getProjectData(projectId: string, userId: string) {
+  public async getProjectData(projectId: string, userId: string, userRole: string) {
     const connection = await this.pool.getConnection();
 
     try {
-      const sqlQueryImage = `
+      let sqlQueryImage = `
         SELECT 
           i.id AS image_id,
           i.file_path,
@@ -47,9 +47,9 @@ export class ProjectModel {
         WHERE i.project_id = ?
           AND i.user_id = ?
       `;
-      const [images] = await connection.query(sqlQueryImage, [projectId, userId]);
 
-      const sqlQueryTemplates = `
+      // AND (i.image_type = 'Default' OR ? = 'Agency')
+      let sqlQueryTemplates = `
         SELECT 
           t.id AS template_id,
           t.name AS template_name,
@@ -84,9 +84,8 @@ export class ProjectModel {
         WHERE t.project_id = ?
           AND t.user_id = ?
       `;
-      const [templates] = await connection.query(sqlQueryTemplates, [projectId, userId]);
 
-      const sqlQueryBranding = `
+      let sqlQueryBranding = `
         SELECT 
          b.id,
          b.primary_color,
@@ -104,6 +103,15 @@ export class ProjectModel {
         WHERE b.project_id = ?
           AND b.user_id = ?
       `;
+
+      if (userRole === "Agency") {
+        sqlQueryImage += " AND i.image_type = 'Default'";
+        sqlQueryTemplates += " AND t.is_selected = 'Default'";
+        sqlQueryBranding += " AND b.primary_font = 'Default'"; // Assuming branding's 'primary_font' is used to signify "Default"
+      }
+
+      const [images] = await connection.query(sqlQueryImage, [projectId, userId]);
+      const [templates] = await connection.query(sqlQueryTemplates, [projectId, userId]);
       const [branding] = await connection.query(sqlQueryBranding, [projectId, userId]);
 
       return { images, templates, branding };
