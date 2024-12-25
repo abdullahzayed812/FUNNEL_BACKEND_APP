@@ -14,12 +14,12 @@ export class ImageModel {
     try {
       const sqlQuery = `
         SELECT 
-          i.id AS image_id,
-          i.file_path,
-          i.image_type,
-          i.is_selected,
-          i.project_id,
-          i.user_id
+          i.id AS id,
+          i.file_path AS url,
+          i.image_type AS imageType,
+          i.is_selected AS isSelected,
+          i.project_id AS projectId,
+          i.user_id  AS userId
         FROM images i
         INNER JOIN projects p ON i.project_id = p.id
         INNER JOIN users u ON i.user_id = u.id
@@ -45,7 +45,7 @@ export class ImageModel {
           VALUES (?, ?, ?, ?, ?, ?)
       `;
 
-      const result = await connection.query(sqlQuery, [
+      const [result] = await connection.query(sqlQuery, [
         image.id,
         image.filePath,
         image.imageType,
@@ -54,7 +54,7 @@ export class ImageModel {
         image.userId,
       ]);
 
-      return result;
+      return { id: image.id, url: image.filePath, type: image.imageType };
     } finally {
       connection.release();
     }

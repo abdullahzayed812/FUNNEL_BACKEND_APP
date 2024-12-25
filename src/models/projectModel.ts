@@ -13,12 +13,12 @@ export class ProjectModel {
     try {
       const sqlQueryProjectsData = `
         SELECT 
-          p.id AS project_id,
-          p.name AS project_name,
-          p.description AS project_description,
-          p.website AS project_website
+          p.id,
+          p.name,
+          p.description,
+          p.website
         FROM users u
-        LEFT JOIN projects p ON p.user_id = u.id
+        INNER JOIN projects p ON p.user_id = u.id
         WHERE u.id = ?
       `;
       const [projects] = await connection.query(sqlQueryProjectsData, [userId]);

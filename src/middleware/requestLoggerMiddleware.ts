@@ -1,11 +1,6 @@
-import { randomUUID } from "crypto";
 import { RequestHandler } from "express";
-import fs from "fs";
-import fsPromises from "fs/promises";
-import path from "path";
-import { ExpressHandler } from "../types/apis";
 
-export const requestLoggerMiddleware: RequestHandler = (req, res, next) => {
+export const requestLoggerMiddleware: RequestHandler = (req, _, next) => {
   console.log(req.method, req.path, " - body: ", req.body);
   next();
 };

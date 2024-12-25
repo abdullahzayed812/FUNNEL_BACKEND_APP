@@ -24,5 +24,5 @@ export const ENDPOINT_CONFIGS: { [key in Endpoints]: EndpointConfig } = {
   [Endpoints.listImages]: { method: "get", url: "/api/v1/project-images/:id", auth: true },
   [Endpoints.listTemplates]: { method: "get", url: "/api/v1/project-templates/:id", auth: true },
   [Endpoints.getBranding]: { method: "get", url: "/api/v1/project-branding/:id", auth: true },
-  [Endpoints.uploadImage]: { method: "post", url: "/api/v1/upload-image", auth: true },
+  [Endpoints.uploadImage]: { method: "post", url: "/api/v1/upload-image/:id", auth: true },
 };

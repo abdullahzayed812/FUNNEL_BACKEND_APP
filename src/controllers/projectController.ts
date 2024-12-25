@@ -11,9 +11,9 @@ export class ProjectController {
 
   listProjectsController: ExpressHandler = async (_, res) => {
     try {
-      const result = await this.projectService.listProjects(res.locals.userId);
+      const projects = await this.projectService.listProjects(res.locals.userId);
 
-      res.status(200).send({ projects: result });
+      res.status(200).send({ projects });
     } catch (error: any) {
       if (error instanceof AppError) {
         res.status(error.statusCode).send({ error: error.message });

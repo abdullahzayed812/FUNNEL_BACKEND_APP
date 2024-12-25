@@ -38,7 +38,7 @@ export class UploadFileService {
 
     const image: Image = {
       id: randomUUID(),
-      filePath: `/upload/${file.filename}`,
+      filePath: `http://localhost:3000/uploads/${file.filename}`,
       imageType: userRole === "Admin" ? "Default" : "Customized",
       isSelected: false,
       projectId,
