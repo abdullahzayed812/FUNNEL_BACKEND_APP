@@ -19,10 +19,8 @@ export class UserController {
       res.status(201).send({ user, accessToken });
     } catch (error: any) {
       if (error instanceof AppError) {
-        // Specific error handling (e.g., validation, authentication issues)
         res.status(error.statusCode).send({ error: error.message });
       } else {
-        // Unknown errors (server issues)
         res.status(500).send({ error: "Internal Server Error" });
       }
     }

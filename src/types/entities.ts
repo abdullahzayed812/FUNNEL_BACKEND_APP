@@ -84,7 +84,10 @@ export interface Template {
 export interface Image {
   id: string;
   filePath: string;
+  imageType: string;
+  isSelected: boolean;
   projectId: string;
+  userId: string;
 }
 
 export interface Project {

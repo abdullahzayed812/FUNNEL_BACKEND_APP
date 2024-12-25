@@ -1,19 +1,28 @@
 import { upload } from "../helpers/uploadFile";
+import { UploadFileService } from "../services/uploadFileService";
 import { ExpressHandler } from "../types/apis";
 
 export class UploadFileController {
-  public uploadFile: ExpressHandler = async (req, res, next) => {
-    upload.single("image")(req, res, (err) => {
-      if (err) {
-        return next(err);
-      }
+  private uploadFileService: UploadFileService;
 
-      if (!req.file) {
-        return res.status(400).json({ error: "No file uploaded" }); // Return error if no file
-      }
+  constructor(uploadFileService: UploadFileService) {
+    this.uploadFileService = uploadFileService;
+  }
 
-      const imageUrl = `/uploads/${req.file.filename}`;
-      return res.status(200).json({ imageUrl }); // Return the image URL
+  public uploadFileController: ExpressHandler = async (req, res, next) => {
+    const { id } = req.params;
+
+    upload.single("image")(req, res, async (err) => {
+      const image = await this.uploadFileService.uploadFile(
+        err,
+        id,
+        res.locals.userId,
+        res.locals.userRole,
+        req.file,
+        next
+      );
+
+      return res.status(200).json({ image }); // Return the image URL
     });
   };
 }

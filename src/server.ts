@@ -17,6 +17,16 @@ import { ProjectService } from "./services/projectService";
 import { ProjectController } from "./controllers/projectController";
 import { UploadFileController } from "./controllers/uploadFileController";
 import path from "node:path";
+import { ImageModel } from "./models/imageModel";
+import { TemplateModel } from "./models/templateModel";
+import { BrandingModel } from "./models/brandingModel";
+import { ImageService } from "./services/imageService";
+import { ImageController } from "./controllers/imageController";
+import { TemplateService } from "./services/templateService";
+import { TemplateController } from "./controllers/templateController";
+import { BrandingService } from "./services/brandingService";
+import { BrandingController } from "./controllers/brandingController";
+import { UploadFileService } from "./services/uploadFileService";
 
 const __filename = new URL(import.meta.url).pathname;
 const __dirname = path.dirname(__filename);
@@ -44,7 +54,20 @@ export async function createServer(logRequests: boolean = true) {
   const projectService = new ProjectService(projectModel, userModel);
   const projectController = new ProjectController(projectService);
 
-  const uploadImageController = new UploadFileController();
+  const imageModel = new ImageModel(pool);
+  const imageService = new ImageService(imageModel, projectModel);
+  const imageController = new ImageController(imageService);
+
+  const templateModel = new TemplateModel(pool);
+  const templateService = new TemplateService(templateModel, projectModel);
+  const templateController = new TemplateController(templateService);
+
+  const brandingModel = new BrandingModel(pool);
+  const brandingService = new BrandingService(brandingModel, projectModel);
+  const brandingController = new BrandingController(brandingService);
+
+  const uploadFileService = new UploadFileService(imageModel);
+  const uploadImageController = new UploadFileController(uploadFileService);
 
   const authMiddleware = new AuthMiddleware(userModel);
 
@@ -55,8 +78,10 @@ export async function createServer(logRequests: boolean = true) {
     [Endpoints.signIn]: userController.signInController,
     [Endpoints.signUp]: userController.signUpController,
     [Endpoints.listProjects]: projectController.listProjectsController,
-    [Endpoints.getProjectData]: projectController.getProjectDataController,
-    [Endpoints.uploadImage]: uploadImageController.uploadFile,
+    [Endpoints.listImages]: imageController.listImagesController,
+    [Endpoints.listTemplates]: templateController.listTemplatesController,
+    [Endpoints.getBranding]: brandingController.getBrandingController,
+    [Endpoints.uploadImage]: uploadImageController.uploadFileController,
   };
 
   Object.keys(Endpoints).forEach((entry) => {

@@ -1,3 +1,4 @@
+import { AppError } from "../configs/error";
 import { ProjectService } from "../services/projectService";
 import { ExpressHandler } from "../types/apis";
 
@@ -14,23 +15,11 @@ export class ProjectController {
 
       res.status(200).send({ projects: result });
     } catch (error: any) {
-      res.status(400).send({ error: error.message });
-    }
-  };
-
-  getProjectDataController: ExpressHandler = async (req, res) => {
-    try {
-      const { id } = req.params;
-
-      const { images, templates, branding } = await this.projectService.getProjectData(
-        id,
-        res.locals.userId,
-        res.locals.userRole
-      );
-
-      res.status(200).send({ images, templates, branding });
-    } catch (error: any) {
-      res.status(400).send({ error: error.message });
+      if (error instanceof AppError) {
+        res.status(error.statusCode).send({ error: error.message });
+      } else {
+        res.status(500).send({ error: "Internal Server Error" });
+      }
     }
   };
 }
