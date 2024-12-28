@@ -1,4 +1,5 @@
 import { Pool } from "mysql2/promise";
+import { Branding } from "../types/entities";
 
 export class BrandingModel {
   private pool: Pool;
@@ -7,18 +8,18 @@ export class BrandingModel {
     this.pool = pool;
   }
 
-  public async getBranding(projectId: string, userId: string, userRole: string) {
+  public async get(projectId: string, userId: string, userRole: string) {
     const connection = await this.pool.getConnection();
 
     try {
       const sqlQuery = `
         SELECT 
           b.id,
-          b.primary_color,
-          b.secondary_color,
-          b.additional_color,
-          b.primary_font,
-          b.secondary_font,
+          b.primary_color AS primaryColor,
+          b.secondary_color AS secondaryColor,
+          b.additional_color AS additionalColor,
+          b.primary_font AS primaryFont,
+          b.secondary_font AS secondaryFont,
           b.created_at,
           b.updated_at,
           b.project_id,
@@ -33,6 +34,39 @@ export class BrandingModel {
       const [branding] = await connection.query(sqlQuery, [projectId, userId]);
 
       return branding;
+    } finally {
+      connection.release();
+    }
+  }
+
+  public async update(branding: Branding, projectId: string, userId: string, userRole: string) {
+    const connection = await this.pool.getConnection();
+
+    try {
+      const sqlQuery = `
+        UPDATE branding
+        SET 
+          primary_color = COALESCE(?, primary_color), 
+          secondary_color = COALESCE(?, secondary_color), 
+          additional_color = COALESCE(?, additional_color), 
+          primary_font = COALESCE(?, primary_font), 
+          secondary_font = COALESCE(?, secondary_font)
+        WHERE project_id = ? AND user_id = ?;      
+      `;
+
+      const { primaryColor, secondaryColor, additionalColor, primaryFont, secondaryFont } = branding;
+
+      const [result] = await connection.query(sqlQuery, [
+        primaryColor,
+        secondaryColor,
+        additionalColor,
+        primaryFont,
+        secondaryFont,
+        projectId,
+        userId,
+      ]);
+
+      return result;
     } finally {
       connection.release();
     }

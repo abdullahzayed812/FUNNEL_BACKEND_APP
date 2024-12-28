@@ -47,7 +47,7 @@ export class AuthMiddleware {
   };
 
   public enforceJwt: ExpressHandler<any, any> = async (_, res, next) => {
-    console.log(res.locals.userId, res.locals.role);
+    // console.log(res.locals.userId, res.locals.role);
     if (!res.locals.userId || !res.locals.role) {
       return res.sendStatus(401); // Unauthorized
     }

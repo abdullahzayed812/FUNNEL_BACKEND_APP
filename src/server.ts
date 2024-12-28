@@ -82,15 +82,23 @@ export async function createServer(logRequests: boolean = true) {
     [Endpoints.listTemplates]: templateController.listTemplatesController,
     [Endpoints.getBranding]: brandingController.getBrandingController,
     [Endpoints.uploadImage]: uploadImageController.uploadFileController,
+    [Endpoints.createTemplate]: templateController.createTemplateController,
+    [Endpoints.listCustomizedTemplates]: templateController.listCustomizedTemplatesController,
+    [Endpoints.updateBranding]: brandingController.updateBrandingController,
   };
 
   Object.keys(Endpoints).forEach((entry) => {
     const config = ENDPOINT_CONFIGS[entry as Endpoints];
-    const handler = CONTROLLERS[entry as Endpoints];
+    const controller = CONTROLLERS[entry as Endpoints];
 
     config.auth
-      ? app[config.method](config.url, authMiddleware.jwtParse, authMiddleware.enforceJwt, expressAsyncHandler(handler))
-      : app[config.method](config.url, authMiddleware.jwtParse, expressAsyncHandler(handler));
+      ? app[config.method](
+          config.url,
+          authMiddleware.jwtParse,
+          authMiddleware.enforceJwt,
+          expressAsyncHandler(controller)
+        )
+      : app[config.method](config.url, authMiddleware.jwtParse, expressAsyncHandler(controller));
   });
 
   app.use(errorHandlerMiddleware);

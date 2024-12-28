@@ -17,8 +17,7 @@ export class UploadFileController {
 
     upload.single("image")(req, res, async (err) => {
       const image = await this.uploadFileService.uploadFile(err, id, userId, userRole, req.file, next);
-      // console.log(image);
-      return res.status(200).json({ image }); // Return the image URL
+      return res.status(200).json({ image });
     });
   };
 }

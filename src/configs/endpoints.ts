@@ -14,6 +14,9 @@ export enum Endpoints {
   listTemplates = "listTemplates",
   getBranding = "getBranding",
   uploadImage = "uploadImage",
+  createTemplate = "createTemplate",
+  listCustomizedTemplates = "listCustomizedTemplates",
+  updateBranding = "updateBranding",
 }
 
 export const ENDPOINT_CONFIGS: { [key in Endpoints]: EndpointConfig } = {
@@ -22,7 +25,10 @@ export const ENDPOINT_CONFIGS: { [key in Endpoints]: EndpointConfig } = {
   [Endpoints.signUp]: { method: "post", url: "/api/v1/signUp", sensitive: true },
   [Endpoints.listProjects]: { method: "get", url: "/api/v1/projects", auth: true },
   [Endpoints.listImages]: { method: "get", url: "/api/v1/project-images/:id", auth: true },
-  [Endpoints.listTemplates]: { method: "get", url: "/api/v1/project-templates/:id", auth: true },
+  [Endpoints.createTemplate]: { method: "post", url: "/api/v1/project-templates/:id", auth: true },
   [Endpoints.getBranding]: { method: "get", url: "/api/v1/project-branding/:id", auth: true },
   [Endpoints.uploadImage]: { method: "post", url: "/api/v1/upload-image/:id", auth: true },
+  [Endpoints.listTemplates]: { method: "get", url: "/api/v1/project-templates/:id", auth: true },
+  [Endpoints.listCustomizedTemplates]: { method: "get", url: "/api/v1/project-customized-templates/:id", auth: true },
+  [Endpoints.updateBranding]: { method: "patch", url: "/api/v1/project-branding/:id", auth: true },
 };

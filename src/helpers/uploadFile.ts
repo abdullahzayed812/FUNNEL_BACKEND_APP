@@ -5,7 +5,7 @@ import fs from "fs";
 // Set up storage engine for multer
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    const uploadDir = "src/uploads/";
+    const uploadDir = "src\\uploads\\";
 
     // Check if the uploads directory exists; if not, create it
     if (!fs.existsSync(uploadDir)) {

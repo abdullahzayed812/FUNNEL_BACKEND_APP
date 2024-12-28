@@ -52,6 +52,8 @@ export interface Ad {
 }
 
 export interface TemplateText {
+  id: string;
+  type: string;
   text: string;
   translateX: number;
   translateY: number;
@@ -72,12 +74,15 @@ export interface TemplateText {
 export interface Template {
   id: number | string;
   name: string;
+  type: string;
   frameSvg: string;
   defaultPrimary: string;
   defaultSecondary: string;
-  headline: TemplateText;
-  punchline: TemplateText;
-  cta: TemplateText;
+  templateTexts: {
+    headline: TemplateText;
+    punchline: TemplateText;
+    cta: TemplateText;
+  };
   isSelected?: boolean;
 }
 
@@ -95,4 +100,12 @@ export interface Project {
   name: string;
   description: string;
   website: string;
+}
+
+export interface Branding {
+  primaryColor: string;
+  secondaryColor: string;
+  additionalColor: string;
+  primaryFont: string;
+  secondaryFont: string;
 }
