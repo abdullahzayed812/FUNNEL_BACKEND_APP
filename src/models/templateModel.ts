@@ -8,7 +8,7 @@ export class TemplateModel {
     this.pool = pool;
   }
 
-  public async listOriginal(projectId: string, userId: string, userRole: string) {
+  public async listDefault(projectId: string, userId: string, userRole: string) {
     const connection = await this.pool.getConnection();
 
     try {

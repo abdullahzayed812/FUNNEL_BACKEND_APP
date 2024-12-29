@@ -4,12 +4,18 @@ import { verifyJwt } from "../helpers/authentication";
 import { ERRORS } from "../configs/error";
 import { UserModel } from "../models/userModel";
 import jwt from "jsonwebtoken";
+import { ProjectModel } from "../models/projectModel";
+import { ImageModel } from "../models/imageModel";
 
 export class AuthMiddleware {
   private userModel: UserModel;
+  private projectModel: ProjectModel;
+  private imageModel: ImageModel;
 
-  constructor(userModel: UserModel) {
+  constructor(userModel: UserModel, projectModel: ProjectModel, imageModel: ImageModel) {
     this.userModel = userModel;
+    this.projectModel = projectModel;
+    this.imageModel = imageModel;
   }
 
   public jwtParse: ExpressHandler = async (req, res, next) => {
@@ -53,5 +59,38 @@ export class AuthMiddleware {
     }
 
     return next();
+  };
+
+  public checkProjectId: ExpressHandler = async (req, res, next) => {
+    const { projectId } = req.params;
+
+    if (!projectId) {
+      return res.status(400).send({ error: ERRORS.PROJECT_ID_NOT_SENT });
+    }
+
+    const projectExists = await this.projectModel.get(projectId);
+
+    if (!projectExists) {
+      return res.status(400).send({ error: ERRORS.PROJECT_NOT_FOUND });
+    }
+
+    next();
+  };
+
+  public checkImageId: ExpressHandler = async (req, res, next) => {
+    const { projectId } = req.params;
+    const { imageId } = req.body;
+
+    if (!imageId) {
+      return res.status(400).send({ error: ERRORS.IMAGE_ID_NOT_SENT });
+    }
+
+    const imageExists = await this.imageModel.get(imageId, projectId, res.locals.userId);
+
+    if (!imageExists) {
+      return res.status(400).send({ error: ERRORS.IMAGE_NOT_FOUND });
+    }
+
+    next();
   };
 }

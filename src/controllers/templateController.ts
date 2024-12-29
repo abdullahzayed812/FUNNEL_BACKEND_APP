@@ -1,36 +1,32 @@
-import { AppError } from "../configs/error";
-import { TemplateService } from "../services/templateService";
+import { AppError, ERRORS } from "../configs/error";
+import { TemplateModel } from "../models/templateModel";
 import { ExpressHandler } from "../types/apis";
 
 export class TemplateController {
-  private templateService: TemplateService;
+  private templateModel: TemplateModel;
 
-  constructor(templateService: TemplateService) {
-    this.templateService = templateService;
+  constructor(templateModel: TemplateModel) {
+    this.templateModel = templateModel;
   }
 
-  listTemplatesController: ExpressHandler = async (req, res) => {
+  listDefaultTemplates: ExpressHandler = async (req, res) => {
     try {
-      const { id } = req.params;
+      const { projectId } = req.params;
 
-      const templates = await this.templateService.listTemplates(id, res.locals.userId, res.locals.role);
+      const templates = await this.templateModel.listDefault(projectId, res.locals.userId, res.locals.role);
 
       res.status(200).send({ templates });
     } catch (error: any) {
-      if (error instanceof AppError) {
-        res.status(error.statusCode).send({ error: error.message });
-      } else {
-        res.status(500).send({ error: "Internal Server Error" });
-      }
+      res.status(400).send({ error: error.message });
     }
   };
 
-  listCustomizedTemplatesController: ExpressHandler = async (req, res) => {
+  listCustomizedTemplates: ExpressHandler = async (req, res) => {
     try {
-      const { id } = req.params;
+      const { projectId } = req.params;
 
-      const customizedTemplates = await this.templateService.listCustomizedTemplates(
-        id,
+      const customizedTemplates = await this.templateModel.listCustomized(
+        projectId,
         res.locals.userId,
         res.locals.role
       );
@@ -40,36 +36,36 @@ export class TemplateController {
       if (error instanceof AppError) {
         res.status(error.statusCode).send({ error: error.message });
       } else {
-        res.status(500).send({ error: "Internal Server Error" });
-      }
-    }
-  };
-
-  createTemplateController: ExpressHandler = async (req, res) => {
-    try {
-      const { id } = req.params;
-      const { template } = req.body;
-
-      console.log(template);
-
-      const isCreated = await this.templateService.createTemplate(template, id, res.locals.userId, res.locals.role);
-
-      res.status(201).send(isCreated);
-    } catch (error: any) {
-      if (error instanceof AppError) {
-        res.status(error.statusCode).send({ error: error.message });
-      } else {
         res.status(500).send({ error: "Internal Server Error: " + error });
       }
     }
   };
 
-  updateTemplateSelectionController: ExpressHandler = async (req, res) => {
+  createTemplate: ExpressHandler = async (req, res) => {
     try {
-      const { id } = req.params;
-      const { projectId, status } = req.body;
+      const { projectId } = req.params;
+      const { template } = req.body;
 
-      const result = await this.templateService.updateTemplate(projectId, id, status, res.locals.userId);
+      const isCreated = await this.templateModel.create(template, projectId, res.locals.userId, res.locals.role);
+
+      res.status(201).send(isCreated);
+    } catch (error: any) {
+      res.status(400).send({ error: error.message });
+    }
+  };
+
+  updateTemplateSelection: ExpressHandler = async (req, res) => {
+    try {
+      const { projectId } = req.params;
+      const { templateId, status } = req.body;
+
+      const templateExists = await this.templateModel.get(projectId, templateId, res.locals.userId);
+
+      if (!templateExists) {
+        res.status(400).send({ error: "Template id is required." });
+      }
+
+      const result = await this.templateModel.update(templateId, status);
 
       res.send(200).send(result);
     } catch (error: any) {
@@ -81,20 +77,22 @@ export class TemplateController {
     }
   };
 
-  deleteTemplateController: ExpressHandler = async (req, res) => {
+  deleteTemplate: ExpressHandler = async (req, res) => {
     try {
-      const { id } = req.params;
-      const { projectId } = req.body;
+      const { projectId } = req.params;
+      const { templateId } = req.body;
 
-      const result = await this.templateService.deleteTemplate(projectId, id, res.locals.userId);
+      const templateExists = await this.templateModel.get(projectId, templateId, res.locals.userId);
+
+      if (!templateExists) {
+        res.status(400).send("Template id is required.");
+      }
+
+      const result = await this.templateModel.delete(templateId);
 
       res.send(200).send(result);
     } catch (error: any) {
-      if (error instanceof AppError) {
-        res.status(error.statusCode).send({ error: error.message });
-      } else {
-        res.status(500).send({ error: "Internal Server Error" });
-      }
+      res.status(400).send({ error: error.message });
     }
   };
 }

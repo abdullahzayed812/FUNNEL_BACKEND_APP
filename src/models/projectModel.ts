@@ -1,4 +1,4 @@
-import { Pool } from "mysql2/promise";
+import { Pool, QueryResult } from "mysql2/promise";
 
 export class ProjectModel {
   private pool: Pool;
@@ -36,6 +36,7 @@ export class ProjectModel {
       const sqlQuery = `SELECT p.name FROM projects p WHERE p.id = ?`;
 
       const [result] = await connection.query(sqlQuery, [projectId]);
+
       return result;
     } finally {
       connection.release();

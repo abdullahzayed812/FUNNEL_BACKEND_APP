@@ -109,3 +109,9 @@ export interface Branding {
   primaryFont: string;
   secondaryFont: string;
 }
+
+export interface GeneratedVisuals {
+  id: string;
+  template: Template;
+  image: Image;
+}

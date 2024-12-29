@@ -1,25 +1,20 @@
-import { AppError } from "../configs/error";
-import { ProjectService } from "../services/projectService";
+import { ProjectModel } from "../models/projectModel";
 import { ExpressHandler } from "../types/apis";
 
 export class ProjectController {
-  private projectService: ProjectService;
+  private projectModel: ProjectModel;
 
-  constructor(projectService: ProjectService) {
-    this.projectService = projectService;
+  constructor(projectModel: ProjectModel) {
+    this.projectModel = projectModel;
   }
 
-  listProjectsController: ExpressHandler = async (_, res) => {
+  listProjects: ExpressHandler = async (_, res) => {
     try {
-      const projects = await this.projectService.listProjects(res.locals.userId);
+      const projects = await this.projectModel.list(res.locals.userId);
 
       res.status(200).send({ projects });
     } catch (error: any) {
-      if (error instanceof AppError) {
-        res.status(error.statusCode).send({ error: error.message });
-      } else {
-        res.status(500).send({ error: "Internal Server Error" });
-      }
+      res.status(400).send({ error: error.message });
     }
   };
 }

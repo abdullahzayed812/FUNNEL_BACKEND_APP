@@ -1,61 +1,85 @@
-import { AppError } from "../configs/error";
-import { ImageService } from "../services/imageService";
+import { randomUUID } from "crypto";
+import { ERRORS } from "../configs/error";
+import { upload } from "../helpers/uploadFile";
+import { ImageModel } from "../models/imageModel";
 import { ExpressHandler } from "../types/apis";
+import { Image } from "../types/entities";
 
 export class ImageController {
-  private imageService: ImageService;
+  private imageModel: ImageModel;
 
-  constructor(imageService: ImageService) {
-    this.imageService = imageService;
+  constructor(imageModel: ImageModel) {
+    this.imageModel = imageModel;
   }
 
-  listImagesController: ExpressHandler = async (req, res) => {
+  listImages: ExpressHandler = async (req, res) => {
     try {
-      const { id } = req.params;
+      const { projectId } = req.params;
 
-      const images = await this.imageService.listImages(id, res.locals.userId, res.locals.userRole);
+      const images = await this.imageModel.list(projectId, res.locals.userId, res.locals.userRole);
 
       res.status(200).send({ images });
     } catch (error: any) {
-      if (error instanceof AppError) {
-        res.status(error.statusCode).send({ error: error.message });
-      } else {
-        res.status(500).send({ error: "Internal Server Error" });
-      }
+      res.status(400).send({ error: error.message });
     }
   };
 
-  updateImageSelectionController: ExpressHandler = async (req, res) => {
+  updateImageSelection: ExpressHandler = async (req, res) => {
     try {
-      const { id } = req.params;
-      const { projectId, status } = req.body;
+      const { imageId, status } = req.body;
 
-      const result = await this.imageService.updateImage(projectId, id, status, res.locals.userId);
+      const result = await this.imageModel.update(imageId, status);
 
       res.send(200).send(result);
     } catch (error: any) {
-      if (error instanceof AppError) {
-        res.status(error.statusCode).send({ error: error.message });
-      } else {
-        res.status(500).send({ error: "Internal Server Error" });
-      }
+      res.status(400).send({ error: error.message });
     }
   };
 
-  deleteImageController: ExpressHandler = async (req, res) => {
+  deleteImage: ExpressHandler = async (req, res) => {
     try {
-      const { id } = req.params;
-      const { projectId } = req.body;
+      const { imageId } = req.body;
 
-      const result = await this.imageService.deleteImage(projectId, id, res.locals.userId);
+      const result = await this.imageModel.delete(imageId);
 
       res.send(200).send(result);
     } catch (error: any) {
-      if (error instanceof AppError) {
-        res.status(error.statusCode).send({ error: error.message });
-      } else {
-        res.status(500).send({ error: "Internal Server Error" });
-      }
+      res.status(400).send({ error: error.message });
     }
+  };
+
+  public uploadImage: ExpressHandler = async (req, res, next) => {
+    const { projectId } = req.params;
+    const userId = res.locals.userId;
+    const userRole = res.locals.role;
+
+    upload.single("image")(req, res, async (err) => {
+      if (err) {
+        return next(err);
+      }
+
+      const file = req.file;
+
+      if (!file) {
+        res.status(400).send(ERRORS.NO_FILE_UPLOADED);
+      }
+
+      const image: Image = {
+        id: randomUUID(),
+        filePath: `http://localhost:3000/uploads/${file?.filename}`,
+        imageType: userRole === "Admin" ? "Default" : "Customized",
+        isSelected: false,
+        projectId,
+        userId,
+      };
+
+      try {
+        await this.imageModel.create(image);
+      } catch (error: any) {
+        res.status(400).send({ error: error.message });
+      }
+
+      res.status(201).json({ image });
+    });
   };
 }

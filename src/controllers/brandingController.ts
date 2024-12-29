@@ -1,44 +1,39 @@
-import { AppError } from "../configs/error";
-import { BrandingService } from "../services/brandingService";
+import { BrandingModel } from "../models/brandingModel";
 import { ExpressHandler } from "../types/apis";
 
 export class BrandingController {
-  private brandingService: BrandingService;
+  private brandingModel: BrandingModel;
 
-  constructor(brandingService: BrandingService) {
-    this.brandingService = brandingService;
+  constructor(brandingModel: BrandingModel) {
+    this.brandingModel = brandingModel;
   }
 
-  getBrandingController: ExpressHandler = async (req, res) => {
+  getBranding: ExpressHandler = async (req, res) => {
     try {
       const { id } = req.params;
 
-      const branding = await this.brandingService.getBranding(id, res.locals.userId, res.locals.role);
+      const branding = await this.brandingModel.get(id, res.locals.userId, res.locals.role);
 
       res.status(200).send({ branding });
     } catch (error: any) {
-      if (error instanceof AppError) {
-        res.status(error.statusCode).send({ error: error.message });
-      } else {
-        res.status(500).send({ error: "Internal Server Error" });
-      }
+      res.status(400).send({ error: error.message });
     }
   };
 
-  updateBrandingController: ExpressHandler = async (req, res) => {
+  updateBranding: ExpressHandler = async (req, res) => {
     try {
-      const { id } = req.params;
+      const { projectId } = req.params;
       const { branding } = req.body;
 
-      const updateResult = await this.brandingService.updateBranding(branding, id, res.locals.userId, res.locals.role);
+      if (Object.entries(branding).some(([key, value]) => !value)) {
+        res.status(400).send({ error: "No data received." });
+      }
+
+      const updateResult = await this.brandingModel.update(branding, projectId, res.locals.userId, res.locals.role);
 
       res.status(200).send(updateResult);
     } catch (error: any) {
-      if (error instanceof AppError) {
-        res.status(error.statusCode).send({ error: error.message });
-      } else {
-        res.status(500).send({ error: "Internal Server Error" });
-      }
+      res.status(400).send({ error: error.message });
     }
   };
 }
