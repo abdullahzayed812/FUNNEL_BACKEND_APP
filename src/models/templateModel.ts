@@ -320,4 +320,52 @@ export class TemplateModel {
       connection.release();
     }
   }
+
+  public async get(projectId: string, templateId: string, userId: string) {
+    const connection = await this.pool.getConnection();
+
+    try {
+      const sqlQuery = `
+        SELECT id FROM templates WHERE id = ? AND project_id = ? and user_id = ? AND type = 'Default'
+      `;
+
+      const [result] = await connection.query(sqlQuery, [templateId, projectId, userId]);
+
+      return result;
+    } finally {
+      connection.release();
+    }
+  }
+
+  public async update(templateId: string, status: boolean) {
+    const connection = await this.pool.getConnection();
+
+    try {
+      const sqlQuery = `
+        UPDATE templates SET is_selected = ? WHERE id = ?
+      `;
+
+      const [result] = await connection.query(sqlQuery, [status, templateId]);
+
+      return result;
+    } finally {
+      connection.release();
+    }
+  }
+
+  public async delete(templateId: string) {
+    const connection = await this.pool.getConnection();
+
+    try {
+      const sqlQuery = `
+        DELETE FROM templates WHERE id = ? AND type = 'Default'
+       `;
+
+      const [result] = await connection.query(sqlQuery, [templateId]);
+
+      return result;
+    } finally {
+      connection.release();
+    }
+  }
 }

@@ -17,7 +17,7 @@ export class BrandingService {
       throw new AppError(ERRORS.PROJECT_ID_NOT_SENT, 400);
     }
 
-    const projectExists = await this.projectModel.getProjectById(projectId);
+    const projectExists = await this.projectModel.get(projectId);
 
     if (!projectExists) {
       throw new AppError(ERRORS.PROJECT_NOT_FOUND, 400);
@@ -31,7 +31,7 @@ export class BrandingService {
       throw new AppError(ERRORS.PROJECT_ID_NOT_SENT, 400);
     }
 
-    const projectExists = await this.projectModel.getProjectById(projectId);
+    const projectExists = await this.projectModel.get(projectId);
 
     if (!projectExists) {
       throw new AppError(ERRORS.PROJECT_NOT_FOUND, 400);

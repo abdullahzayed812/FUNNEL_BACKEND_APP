@@ -85,6 +85,10 @@ export async function createServer(logRequests: boolean = true) {
     [Endpoints.createTemplate]: templateController.createTemplateController,
     [Endpoints.listCustomizedTemplates]: templateController.listCustomizedTemplatesController,
     [Endpoints.updateBranding]: brandingController.updateBrandingController,
+    [Endpoints.updateImageSelectionStatus]: imageController.updateImageSelectionController,
+    [Endpoints.deleteImage]: imageController.deleteImageController,
+    [Endpoints.updateTemplateSelectionStatus]: templateController.updateTemplateSelectionController,
+    [Endpoints.deleteTemplate]: templateController.deleteTemplateController,
   };
 
   Object.keys(Endpoints).forEach((entry) => {

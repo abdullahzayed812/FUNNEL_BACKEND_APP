@@ -63,4 +63,38 @@ export class TemplateController {
       }
     }
   };
+
+  updateTemplateSelectionController: ExpressHandler = async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { projectId, status } = req.body;
+
+      const result = await this.templateService.updateTemplate(projectId, id, status, res.locals.userId);
+
+      res.send(200).send(result);
+    } catch (error: any) {
+      if (error instanceof AppError) {
+        res.status(error.statusCode).send({ error: error.message });
+      } else {
+        res.status(500).send({ error: "Internal Server Error" });
+      }
+    }
+  };
+
+  deleteTemplateController: ExpressHandler = async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { projectId } = req.body;
+
+      const result = await this.templateService.deleteTemplate(projectId, id, res.locals.userId);
+
+      res.send(200).send(result);
+    } catch (error: any) {
+      if (error instanceof AppError) {
+        res.status(error.statusCode).send({ error: error.message });
+      } else {
+        res.status(500).send({ error: "Internal Server Error" });
+      }
+    }
+  };
 }

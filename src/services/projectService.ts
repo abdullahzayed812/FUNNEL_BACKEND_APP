@@ -9,6 +9,6 @@ export class ProjectService {
   }
 
   public async listProjects(userId: string) {
-    return await this.projectModel.listProjects(userId);
+    return await this.projectModel.list(userId);
   }
 }

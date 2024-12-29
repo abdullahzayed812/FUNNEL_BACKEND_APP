@@ -8,7 +8,7 @@ export class ImageModel {
     this.pool = pool;
   }
 
-  public async listImages(projectId: string, userId: string, userRole: string) {
+  public async list(projectId: string, userId: string, userRole: string) {
     const connection = await this.pool.getConnection();
 
     try {
@@ -35,7 +35,7 @@ export class ImageModel {
     }
   }
 
-  public async createImage(image: Image) {
+  public async create(image: Image) {
     const connection = await this.pool.getConnection();
 
     try {
@@ -55,6 +55,54 @@ export class ImageModel {
       ]);
 
       return { id: image.id, url: image.filePath, type: image.imageType };
+    } finally {
+      connection.release();
+    }
+  }
+
+  public async get(projectId: string, imageId: string, userId: string) {
+    const connection = await this.pool.getConnection();
+
+    try {
+      const sqlQuery = `
+        SELECT id FROM images WHERE id = ? AND project_id = ? and user_id = ? AND image_type = 'Default'
+      `;
+
+      const [result] = await connection.query(sqlQuery, [imageId, projectId, userId]);
+
+      return result;
+    } finally {
+      connection.release();
+    }
+  }
+
+  public async update(imageId: string, status: boolean) {
+    const connection = await this.pool.getConnection();
+
+    try {
+      const sqlQuery = `
+        UPDATE images SET is_selected = ? WHERE id = ?
+      `;
+
+      const [result] = await connection.query(sqlQuery, [status, imageId]);
+
+      return result;
+    } finally {
+      connection.release();
+    }
+  }
+
+  public async delete(imageId: string) {
+    const connection = await this.pool.getConnection();
+
+    try {
+      const sqlQuery = `
+        DELETE FROM images WHERE id = ? AND image_type = 'Default'
+       `;
+
+      const [result] = await connection.query(sqlQuery, [imageId]);
+
+      return result;
     } finally {
       connection.release();
     }

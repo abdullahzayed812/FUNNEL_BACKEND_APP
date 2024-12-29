@@ -16,6 +16,9 @@ export enum ERRORS {
   PROJECT_NOT_FOUND = "Project not found.",
 
   NO_FILE_UPLOADED = "No file uploaded.",
+
+  IMAGE_ID_NOT_SENT = "You should send image id.",
+  IMAGE_NOT_FOUND = "Image not found.",
 }
 
 export class AppError extends Error {

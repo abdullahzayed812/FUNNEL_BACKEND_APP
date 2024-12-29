@@ -7,7 +7,7 @@ export class ProjectModel {
     this.pool = pool;
   }
 
-  public async listProjects(userId: string) {
+  public async list(userId: string) {
     const connection = await this.pool.getConnection();
 
     try {
@@ -29,7 +29,7 @@ export class ProjectModel {
     }
   }
 
-  public async getProjectById(projectId: string) {
+  public async get(projectId: string) {
     const connection = await this.pool.getConnection();
 
     try {

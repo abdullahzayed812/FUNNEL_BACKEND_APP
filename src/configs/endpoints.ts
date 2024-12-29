@@ -17,6 +17,10 @@ export enum Endpoints {
   createTemplate = "createTemplate",
   listCustomizedTemplates = "listCustomizedTemplates",
   updateBranding = "updateBranding",
+  updateImageSelectionStatus = "updateImageSelectionStatus",
+  deleteImage = "deleteImage",
+  updateTemplateSelectionStatus = "updateTemplateSelectionStatus",
+  deleteTemplate = "deleteTemplate",
 }
 
 export const ENDPOINT_CONFIGS: { [key in Endpoints]: EndpointConfig } = {
@@ -31,4 +35,8 @@ export const ENDPOINT_CONFIGS: { [key in Endpoints]: EndpointConfig } = {
   [Endpoints.listTemplates]: { method: "get", url: "/api/v1/project-templates/:id", auth: true },
   [Endpoints.listCustomizedTemplates]: { method: "get", url: "/api/v1/project-customized-templates/:id", auth: true },
   [Endpoints.updateBranding]: { method: "patch", url: "/api/v1/project-branding/:id", auth: true },
+  [Endpoints.updateImageSelectionStatus]: { method: "patch", url: "/api/v1/project-images/:id", auth: true },
+  [Endpoints.deleteImage]: { method: "delete", url: "/api/v1/project-images/:id", auth: true },
+  [Endpoints.updateTemplateSelectionStatus]: { method: "patch", url: "/api/v1/project-templates/:id", auth: true },
+  [Endpoints.deleteTemplate]: { method: "delete", url: "/api/v1/project-templates/:id", auth: true },
 };

@@ -45,6 +45,6 @@ export class UploadFileService {
       userId,
     };
 
-    return await this.imageModel.createImage(image);
+    return await this.imageModel.create(image);
   }
 }
