@@ -67,7 +67,10 @@ export async function createServer(logRequests: boolean = true) {
 
     [Endpoints.signIn]: userController.signIn,
     [Endpoints.signUp]: userController.signUp,
+    [Endpoints.listUsers]: userController.listUsers,
+    [Endpoints.listForwardedUsers]: userController.listForwardedUsers,
     [Endpoints.listProjects]: projectController.listProjects,
+    [Endpoints.forwardProject]: projectController.forwardProject,
     [Endpoints.getBranding]: brandingController.getBranding,
     [Endpoints.updateBranding]: brandingController.updateBranding,
     [Endpoints.listImages]: imageController.listImages,

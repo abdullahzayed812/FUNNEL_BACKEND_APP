@@ -9,20 +9,27 @@ export class GeneratedVisualsController {
     this.generatedVisualsModel = generatedVisualsModel;
   }
 
-  getGeneratedVisuals: ExpressHandler = async (req, res) => {
+  private handleError(res: any, error: any, statusCode: number = 500): void {
+    console.error(error);
+
+    res.status(statusCode).send({ error: "Internal Server Error" });
+  }
+
+  private handleSuccess(res: any, data: any, statusCode: number = 200): void {
+    res.status(statusCode).send(data);
+  }
+
+  public getGeneratedVisuals: ExpressHandler = async (req, res) => {
     try {
       const { projectId } = req.params;
+      const userId = res.locals.userId;
 
-      const images = await this.generatedVisualsModel.getSelectedImages(projectId, res.locals.userId);
-      const templates = await this.generatedVisualsModel.getSelectedTemplates(projectId, res.locals.userId);
+      const images = await this.generatedVisualsModel.getSelectedImages(projectId, userId);
+      const templates = await this.generatedVisualsModel.getSelectedTemplates(projectId, userId);
 
-      res.status(200).send({ generatedContent: { templates, images } });
+      this.handleSuccess(res, { generatedContent: { templates, images } });
     } catch (error: any) {
-      if (error instanceof AppError) {
-        res.status(error.statusCode).send({ error: error.message });
-      } else {
-        res.status(500).send({ error: "Internal Server Error: " + error });
-      }
+      this.handleError(res, error);
     }
   };
 }

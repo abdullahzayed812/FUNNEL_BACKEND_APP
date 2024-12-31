@@ -9,108 +9,127 @@ export class UserModel {
     this.pool = pool;
   }
 
-  // Create a new user in the database
-  async createUser(user: User) {
+  private async executeQuery<T>(query: string, params: any[] = []): Promise<T[]> {
     const connection = await this.pool.getConnection();
     try {
-      const sqlQuery = "INSERT INTO users (id, email,  role, username, password, created_at) VALUES (?, ?, ?, ?, ?, ?)";
-      const [result] = await connection.query(sqlQuery, [
-        user.id,
-        user.email,
-        user.role,
-        user.username,
-        user.password,
-        user.createdAt,
-      ]);
-      return result;
+      const [result] = await connection.query(query, params);
+      return result as T[];
     } finally {
       connection.release();
     }
+  }
+
+  // Create a new user in the database
+  public async createUser(user: User) {
+    const sqlQuery = `
+    INSERT INTO users (id, email, role, username, password, created_at) 
+    VALUES (?, ?, ?, ?, ?, ?)
+  `;
+
+    const result = await this.executeQuery(sqlQuery, [
+      user.id,
+      user.email,
+      user.role,
+      user.username,
+      user.password,
+      user.createdAt,
+    ]);
+
+    return result;
   }
 
   async getUserByUsernameOrEmail(usernameOrEmail: string): Promise<User | undefined> {
-    const connection = await this.pool.getConnection();
+    const sqlQuery = `
+      SELECT * FROM users WHERE username = ? OR email = ?
+    `;
 
-    try {
-      // Query to check both username and email
-      const sqlQuery = "SELECT * FROM users WHERE username = ? OR email = ?";
-      const [rows] = await connection.query(sqlQuery, [usernameOrEmail, usernameOrEmail]);
+    const users = await this.executeQuery<RowDataPacket>(sqlQuery, [usernameOrEmail, usernameOrEmail]);
 
-      // Ensure `rows` is an array and it has at least one result
-      if (Array.isArray(rows) && rows.length > 0) {
-        const user = rows[0] as RowDataPacket;
-        return { ...user, createdAt: user.created_at } as User;
-      } else {
-        return undefined; // Return undefined if no user was found
-      }
-    } finally {
-      connection.release();
+    if (users.length > 0) {
+      const user = users[0];
+
+      return { ...user, createdAt: user.created_at } as User;
     }
+
+    return undefined;
   }
 
   async getUserByEmail(email: string): Promise<User | undefined> {
-    const connection = await this.pool.getConnection();
+    const sqlQuery = "SELECT * FROM users WHERE email = ?";
 
-    try {
-      const sqlQuery = "SELECT * FROM users WHERE email = ?";
-      const [result] = await connection.query(sqlQuery, [email]);
+    const users = await this.executeQuery<RowDataPacket>(sqlQuery, [email]);
 
-      if (Array.isArray(result) && result.length > 0) {
-        const user = result[0] as RowDataPacket;
-        return { ...user, createdAt: user.created_at } as User;
-      }
+    if (users.length > 0) {
+      const user = users[0];
 
-      return undefined;
-    } finally {
-      connection.release();
+      return { ...user, createdAt: user.created_at } as User;
     }
+
+    return undefined;
   }
 
-  // Get a user by their email or username
-  async getUserByUsername(username: string) {
-    const connection = await this.pool.getConnection();
-    try {
-      const sqlQuery = "SELECT * FROM users WHERE username = ?";
-      const [result] = await connection.query(sqlQuery, [username]);
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    const sqlQuery = "SELECT * FROM users WHERE username = ?";
 
-      if (Array.isArray(result) && result.length > 0) {
-        const user = result[0] as RowDataPacket;
-        return { ...user, createdAt: user.created_at } as User;
-      }
+    const users = await this.executeQuery<RowDataPacket>(sqlQuery, [username]);
 
-      return undefined;
-    } finally {
-      connection.release();
+    if (users.length > 0) {
+      const user = users[0];
+
+      return { ...user, createdAt: user.created_at } as User;
     }
+
+    return undefined;
   }
 
-  // Get a user by their ID
-  async getUserById(id: string): Promise<User | undefined> {
-    const connection = await this.pool.getConnection();
-    try {
-      const sqlQuery = "SELECT * FROM users WHERE id = ?";
-      const [result] = await connection.query(sqlQuery, [id]);
+  public async getUserById(id: string): Promise<User | undefined> {
+    const sqlQuery = "SELECT * FROM users WHERE id = ?";
 
-      if (Array.isArray(result) && result.length > 0) {
-        const user = result[0] as RowDataPacket;
-        return { ...user, createdAt: user.created_at } as User;
-      }
+    const users = await this.executeQuery<RowDataPacket>(sqlQuery, [id]);
 
-      return undefined;
-    } finally {
-      connection.release();
+    if (users.length > 0) {
+      const user = users[0];
+
+      return { ...user, createdAt: user.created_at } as User;
     }
+
+    return undefined;
   }
 
-  // Update user details
   async updateUser(id: string, userData: Partial<User>): Promise<boolean> {
-    const connection = await this.pool.getConnection();
-    try {
-      const updateQuery = "UPDATE users SET username = ?, firstName = ?, lastName = ? WHERE id = ?";
-      await connection.query(updateQuery, [userData.username, id]);
-      return true;
-    } finally {
-      connection.release();
+    const sqlQuery = "UPDATE users SET username = ?, email = ? WHERE id = ?";
+
+    const result = await this.executeQuery<{ affectedRows: number }>(sqlQuery, [userData.username, userData.email]);
+
+    return result[0].affectedRows > 0;
+  }
+
+  public async listUsers() {
+    const sqlQuery = "SELECT id, username, email FROM users";
+
+    const users = await this.executeQuery<RowDataPacket>(sqlQuery);
+
+    if (users.length > 0) {
+      return users;
     }
+
+    return undefined;
+  }
+
+  public async listForwarded(projectId: string) {
+    const sqlQuery = `
+      SELECT u.id, u.username, u.email
+      FROM users u
+      INNER JOIN user_projects up ON u.id = up.user_id
+      WHERE up.project_id = ?;    
+    `;
+
+    const users = await this.executeQuery<RowDataPacket>(sqlQuery, [projectId]);
+
+    if (users.length > 0) {
+      return users;
+    }
+
+    return undefined;
   }
 }

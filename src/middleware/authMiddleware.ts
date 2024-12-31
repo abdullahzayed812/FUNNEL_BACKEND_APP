@@ -70,7 +70,7 @@ export class AuthMiddleware {
 
     const projectExists = await this.projectModel.get(projectId);
 
-    if (!projectExists) {
+    if (!projectExists.id) {
       return res.status(400).send({ error: ERRORS.PROJECT_NOT_FOUND });
     }
 
@@ -78,16 +78,15 @@ export class AuthMiddleware {
   };
 
   public checkImageId: ExpressHandler = async (req, res, next) => {
-    const { projectId } = req.params;
     const { imageId } = req.body;
 
     if (!imageId) {
       return res.status(400).send({ error: ERRORS.IMAGE_ID_NOT_SENT });
     }
 
-    const imageExists = await this.imageModel.get(imageId, projectId, res.locals.userId);
+    const imageExists = await this.imageModel.get(imageId);
 
-    if (!imageExists) {
+    if (!imageExists?.id) {
       return res.status(400).send({ error: ERRORS.IMAGE_NOT_FOUND });
     }
 

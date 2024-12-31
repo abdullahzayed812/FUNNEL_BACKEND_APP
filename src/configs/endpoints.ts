@@ -11,8 +11,11 @@ export enum Endpoints {
   healthz = "healthz",
   signIn = "signIn",
   signUp = "signUp",
+  listUsers = "listUsers",
+  listForwardedUsers = "listForwardedUsers",
 
   listProjects = "listProjects",
+  forwardProject = "forwardProject",
 
   getBranding = "getBranding",
   updateBranding = "updateBranding",
@@ -33,10 +36,24 @@ export enum Endpoints {
 
 export const ENDPOINT_CONFIGS: { [key in Endpoints]: EndpointConfig } = {
   [Endpoints.healthz]: { method: "get", url: "/api/v1/healthz" },
+
+  [Endpoints.listUsers]: { method: "get", url: "/api/v1/users", sensitive: true },
+  [Endpoints.listForwardedUsers]: {
+    method: "get",
+    url: "/api/v1/users/:projectId",
+    sensitive: true,
+    requireProjectId: true,
+  },
   [Endpoints.signIn]: { method: "post", url: "/api/v1/signIn", sensitive: true },
   [Endpoints.signUp]: { method: "post", url: "/api/v1/signUp", sensitive: true },
 
   [Endpoints.listProjects]: { method: "get", url: "/api/v1/projects", auth: true },
+  [Endpoints.forwardProject]: {
+    method: "post",
+    url: "/api/v1/forward-project/:projectId",
+    auth: true,
+    requireProjectId: true,
+  },
 
   [Endpoints.getBranding]: {
     method: "get",
@@ -114,6 +131,5 @@ export const ENDPOINT_CONFIGS: { [key in Endpoints]: EndpointConfig } = {
     url: "/api/v1/generated-visuals/:projectId",
     auth: true,
     requireProjectId: true,
-    requireImageId: true,
   },
 };

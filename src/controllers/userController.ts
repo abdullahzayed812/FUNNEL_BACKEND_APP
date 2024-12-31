@@ -89,6 +89,35 @@ export class UserController {
     }
   };
 
+  public listUsers: ExpressHandler = async (req, res) => {
+    const userRole = res.locals.role;
+
+    try {
+      if (userRole === "Admin") {
+        const users = await this.userModel.listUsers();
+
+        res.status(200).send({ users });
+      }
+    } catch (error: any) {
+      res.status(400).send({ error: error.message });
+    }
+  };
+
+  public listForwardedUsers: ExpressHandler = async (req, res) => {
+    const { projectId } = req.params;
+    const userRole = res.locals.role;
+
+    try {
+      if (userRole === "Admin") {
+        const users = await this.userModel.listForwarded(projectId);
+
+        res.status(200).send({ users });
+      }
+    } catch (error: any) {
+      res.status(400).send({ error: error.message });
+    }
+  };
+
   private hashPassword(password: string) {
     return crypto.pbkdf2Sync(password, getSalt(), 100, 64, "sha512").toString("hex");
   }

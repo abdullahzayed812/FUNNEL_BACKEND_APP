@@ -8,32 +8,44 @@ export class BrandingController {
     this.brandingModel = brandingModel;
   }
 
-  getBranding: ExpressHandler = async (req, res) => {
+  private handleError(res: any, error: any, statusCode: number = 400): void {
+    console.error(error);
+    res.status(statusCode).send({ error: error.message || "An unexpected error occurred" });
+  }
+
+  private handleSuccess(res: any, data: any, statusCode: number = 200): void {
+    res.status(statusCode).send(data);
+  }
+
+  private validateBranding(branding: any): boolean {
+    return Object.entries(branding).every(([key, value]) => value !== undefined && value !== null && value !== "");
+  }
+
+  public getBranding: ExpressHandler = async (req, res) => {
     try {
-      const { id } = req.params;
+      const { projectId } = req.params;
+      const userId = res.locals.userId;
 
-      const branding = await this.brandingModel.get(id, res.locals.userId, res.locals.role);
-
-      res.status(200).send({ branding });
+      const branding = await this.brandingModel.get(projectId, userId);
+      this.handleSuccess(res, { branding });
     } catch (error: any) {
-      res.status(400).send({ error: error.message });
+      this.handleError(res, error);
     }
   };
 
-  updateBranding: ExpressHandler = async (req, res) => {
+  public updateBranding: ExpressHandler = async (req, res) => {
     try {
       const { projectId } = req.params;
       const { branding } = req.body;
 
-      if (Object.entries(branding).some(([key, value]) => !value)) {
-        res.status(400).send({ error: "No data received." });
+      if (!this.validateBranding(branding)) {
+        return res.status(400).send({ error: "No valid data received." });
       }
 
-      const updateResult = await this.brandingModel.update(branding, projectId, res.locals.userId, res.locals.role);
-
-      res.status(200).send(updateResult);
+      const updateResult = await this.brandingModel.update(branding, projectId, res.locals.userId);
+      this.handleSuccess(res, updateResult);
     } catch (error: any) {
-      res.status(400).send({ error: error.message });
+      this.handleError(res, error);
     }
   };
 }
