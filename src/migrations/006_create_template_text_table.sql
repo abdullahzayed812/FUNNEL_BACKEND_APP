@@ -1,6 +1,6 @@
 CREATE TABLE IF NOT EXISTS template_text (
     id              VARCHAR(255) PRIMARY KEY,
-    type            ENUM("headline" | "punchline" | "cta"),
+    type            ENUM('headline', 'punchline', 'cta'),
     text            TEXT NOT NULL,
     font_size       INT,
     font_family     VARCHAR(255),
@@ -10,7 +10,7 @@ CREATE TABLE IF NOT EXISTS template_text (
     border_radius   INT,
     border_width    INT,
     border_style    VARCHAR(8),
-    border_color    VARCHAR(8),   
+    border_color    VARCHAR(10),   
     container_color VARCHAR(7),
     text_color      VARCHAR(7),
     language        VARCHAR(2),
@@ -18,5 +18,7 @@ CREATE TABLE IF NOT EXISTS template_text (
     y_coordinate    INT,
     color           VARCHAR(20),
     template_id     VARCHAR(255) NOT NULL,
+    project_id      VARCHAR(255) NOT NULL,
+    FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
     FOREIGN KEY (template_id) REFERENCES templates(id) ON DELETE CASCADE
 );

@@ -1,5 +1,0 @@
-ALTER TABLE projects
-ADD COLUMN user_id VARCHAR(255),
-ADD CONSTRAINT fk_user
-    FOREIGN KEY (user_id)
-    REFERENCES users(id) ON DELETE CASCADE;
