@@ -11,15 +11,17 @@ export enum ERRORS {
   ACCESS_NOT_ALLOWED = "Access is not allowed.",
   PROJECT_ID_NOT_SENT = "You should send project id.",
   PROJECT_NOT_FOUND = "Project not found.",
+  NO_PROJECTS_EXISTS = "No projects exists.",
   NO_FILE_UPLOADED = "No file uploaded.",
   IMAGE_ID_NOT_SENT = "You should send image id.",
   IMAGE_NOT_FOUND = "Image not found.",
+  NO_TEMPLATES_FOUND = "No templates found.",
 }
 
 export class AppError extends Error {
   public statusCode: number;
 
-  constructor(message: string, statusCode: number) {
+  constructor(message: string, statusCode: number = 500) {
     super(message);
     this.statusCode = statusCode;
     this.name = this.constructor.name;

@@ -18,7 +18,6 @@ export class ImageController {
   }
 
   private handleError(res: any, error: any, statusCode: number = 500): void {
-    console.error(error);
     if (error instanceof Error) {
       res.status(statusCode).send({ error: error.message });
     } else {
@@ -56,11 +55,11 @@ export class ImageController {
 
       const image = await this.imageModel.get(imageId);
 
-      if (!image) {
+      if (!image?.id) {
         return res.status(404).send({ error: "Image not found" });
       }
 
-      const filePath = path.join(__dirname, "..", "uploads", image.filePath);
+      const filePath = path.join(__dirname, "..", image.filePath);
 
       try {
         await fs.unlink(filePath);
@@ -98,7 +97,7 @@ export class ImageController {
 
       const image: Image = {
         id: randomUUID(),
-        filePath: `http://localhost:3000/uploads/${file?.filename}`,
+        filePath: `uploads/${file?.filename}`,
         imageType: userRole === "Admin" ? "Default" : "Customized",
         isSelected: false,
         projectId,

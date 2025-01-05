@@ -13,11 +13,15 @@ export class TemplateController {
     try {
       const { projectId } = req.params;
 
-      const templates = await this.templateModel.listDefault(projectId, res.locals.userId, res.locals.role);
+      const templates = await this.templateModel.listDefault(projectId, res.locals.userId);
 
       res.status(200).send({ templates });
     } catch (error: any) {
-      res.status(400).send({ error: error.message });
+      if (error instanceof AppError) {
+        res.status(error.statusCode).send({ error: error.message });
+      } else {
+        res.status(500).send({ error: "Internal Server Error: " + error.message });
+      }
     }
   };
 
@@ -25,18 +29,14 @@ export class TemplateController {
     try {
       const { projectId } = req.params;
 
-      const customizedTemplates = await this.templateModel.listCustomized(
-        projectId,
-        res.locals.userId,
-        res.locals.role
-      );
+      const customizedTemplates = await this.templateModel.listCustomized(projectId, res.locals.userId);
 
       res.status(200).send({ customizedTemplates });
     } catch (error: any) {
       if (error instanceof AppError) {
         res.status(error.statusCode).send({ error: error.message });
       } else {
-        res.status(500).send({ error: "Internal Server Error: " + error });
+        res.status(500).send({ error: "Internal Server Error: " + error.message });
       }
     }
   };
@@ -46,11 +46,15 @@ export class TemplateController {
       const { projectId } = req.params;
       const { template } = req.body;
 
-      const isCreated = await this.templateModel.create(template, projectId, res.locals.userId, res.locals.role);
+      const isCreated = await this.templateModel.create(template, projectId, res.locals.userId);
 
       res.status(201).send(isCreated);
     } catch (error: any) {
-      res.status(400).send({ error: error.message });
+      if (error instanceof AppError) {
+        res.status(error.statusCode).send({ error: error.message });
+      } else {
+        res.status(500).send({ error: "Internal Server Error: " + error.message });
+      }
     }
   };
 
@@ -92,7 +96,11 @@ export class TemplateController {
 
       res.send(200).send(result);
     } catch (error: any) {
-      res.status(400).send({ error: error.message });
+      if (error instanceof AppError) {
+        res.status(error.statusCode).send({ error: error.message });
+      } else {
+        res.status(500).send({ error: "Internal Server Error: " + error.message });
+      }
     }
   };
 }

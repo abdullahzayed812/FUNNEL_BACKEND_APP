@@ -44,7 +44,7 @@ export class ProjectModel {
     const result = await this.executeQuery<Partial<Project>>(sqlQueryProjectsData, [userId]);
 
     if (result.length === 0) {
-      throw new AppError(ERRORS.PROJECT_NOT_FOUND, 404); // Not found error
+      throw new AppError(ERRORS.NO_PROJECTS_EXISTS, 404); // Not found error
     }
 
     return result;
@@ -54,7 +54,6 @@ export class ProjectModel {
     const sqlQuery = `SELECT p.id FROM projects p WHERE p.id = ?`;
     const result = await this.executeQuery<Partial<Project>>(sqlQuery, [projectId]);
 
-    console.log({ result, projectId });
     if (result.length === 0) {
       throw new AppError(ERRORS.PROJECT_NOT_FOUND, 404); // Not found error
     }

@@ -1,4 +1,5 @@
 import { Pool } from "mysql2/promise";
+import { Image } from "../types/entities";
 
 export class GeneratedVisualsModel {
   private pool: Pool;
@@ -21,11 +22,15 @@ export class GeneratedVisualsModel {
   // Get selected images for a specific project and user
   public async getSelectedImages(projectId: string, userId: string) {
     const sqlQuery = `
-      SELECT * 
+      SELECT 
+        id,
+        file_path AS url,
+        image_type AS imageType,
+        is_selected AS isSelected
       FROM images 
       WHERE project_id = ? AND user_id = ? AND is_selected = ?`;
 
-    const images = await this.executeQuery(sqlQuery, [projectId, userId, true]);
+    const images = await this.executeQuery<Image>(sqlQuery, [projectId, userId, true]);
 
     return images;
   }

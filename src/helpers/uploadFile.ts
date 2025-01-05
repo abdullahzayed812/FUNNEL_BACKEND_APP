@@ -2,10 +2,13 @@ import multer from "multer";
 import path from "path";
 import fs from "fs";
 
+const __filename = new URL(import.meta.url).pathname;
+const __dirname = path.dirname(__filename);
+
 // Set up storage engine for multer
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    const uploadDir = "src\\uploads\\";
+    const uploadDir = path.join(__dirname, "..", "uploads");
 
     // Check if the uploads directory exists; if not, create it
     if (!fs.existsSync(uploadDir)) {

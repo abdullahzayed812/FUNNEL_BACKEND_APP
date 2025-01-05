@@ -1,21 +1,14 @@
-import { Pool, RowDataPacket } from "mysql2/promise";
+import { Pool, QueryResult } from "mysql2/promise";
 import { Image } from "../types/entities";
+import { AppError } from "../configs/error";
+import { BaseModel } from "./baseModel";
 
-export class ImageModel {
-  private pool: Pool;
+export class ImageModel extends BaseModel {
+  protected pool: Pool;
 
   constructor(pool: Pool) {
+    super(pool);
     this.pool = pool;
-  }
-
-  private async executeQuery<T>(query: string, params: any[] = []): Promise<T[]> {
-    const connection = await this.pool.getConnection();
-    try {
-      const [result] = await connection.query(query, params);
-      return result as T[];
-    } finally {
-      connection.release();
-    }
   }
 
   public async list(projectId: string, userId: string) {
@@ -32,9 +25,17 @@ export class ImageModel {
       INNER JOIN users u ON i.user_id = u.id
       WHERE i.project_id = ? AND i.user_id = ?`;
 
-    const images = await this.executeQuery(sqlQuery, [projectId, userId]);
+    try {
+      const images = await this.executeQuery(sqlQuery, [projectId, userId]);
 
-    return images;
+      if (images.length === 0) {
+        return [];
+      }
+
+      return images;
+    } catch (error: any) {
+      throw new AppError(error, 500);
+    }
   }
 
   public async create(image: Image) {
@@ -42,7 +43,7 @@ export class ImageModel {
       INSERT INTO images (id, file_path, image_type, is_selected, project_id, user_id)
       VALUES (?, ?, ?, ?, ?, ?)`;
 
-    const [result] = await this.executeQuery(sqlQuery, [
+    const [result] = await this.executeQuery<QueryResult>(sqlQuery, [
       image.id,
       image.filePath,
       image.imageType,
@@ -53,15 +54,6 @@ export class ImageModel {
 
     return { id: image.id, url: image.filePath, type: image.imageType };
   }
-
-  // public async get(projectId: string, imageId: string, userId: string) {
-  //   const sqlQuery = `
-  //     SELECT id FROM images WHERE id = ? AND project_id = ? AND user_id = ? AND image_type = 'Default'`;
-
-  //   const result = await this.executeQuery<Image>(sqlQuery, [imageId, projectId, userId]);
-
-  //   return result.length > 0 ? result[0] : null; // Return null if no result found
-  // }
 
   public async update(imageId: string, status: boolean) {
     const sqlQuery = `
@@ -82,12 +74,19 @@ export class ImageModel {
   }
 
   async get(imageId: string): Promise<Image | undefined> {
-    const sqlQuery = "SELECT * FROM images WHERE id = ?";
+    const sqlQuery = `
+      SELECT
+        id,
+        file_path AS filePath,
+        image_type AS imageType,
+        is_selected AS isSelected
+      FROM images WHERE id = ?
+    `;
     const result = await this.executeQuery<Image>(sqlQuery, [imageId]);
 
     if (result.length > 0) {
       const image = result[0];
-      return { ...image, filePath: image.filePath } as Image;
+      return image as Image;
     }
 
     return undefined;

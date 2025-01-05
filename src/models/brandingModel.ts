@@ -38,7 +38,7 @@ export class BrandingModel {
 
     const branding = await this.executeQuery(sqlQuery, [projectId, userId]);
 
-    return branding.length > 0 ? branding[0] : null; // Return null if no result
+    return branding.length > 0 ? branding[0] : {}; // Return null if no result
   }
 
   public async update(branding: Branding, projectId: string, userId: string) {

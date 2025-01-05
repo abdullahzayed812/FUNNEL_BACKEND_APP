@@ -1,5 +1,6 @@
 import { Pool } from "mysql2/promise";
 import { Template, TemplateText } from "../types/entities";
+import { AppError, ERRORS } from "../configs/error";
 
 export class TemplateModel {
   private pool: Pool;
@@ -94,7 +95,13 @@ export class TemplateModel {
       LEFT JOIN template_text ct ON t.id = ct.template_id AND ct.type = 'cta'
       WHERE t.project_id = ? AND t.user_id = ? AND t.type = 'Default'`;
 
-    return await this.executeQuery(sqlQuery, [projectId, userId]);
+    const templates = await this.executeQuery<Template>(sqlQuery, [projectId, userId]);
+
+    if (templates.length === 0) {
+      return [];
+    }
+
+    return templates;
   }
 
   // Get customized templates for a specific project and user
@@ -172,7 +179,13 @@ export class TemplateModel {
       LEFT JOIN template_text ct ON t.id = ct.template_id AND ct.type = 'cta'
       WHERE t.project_id = ? AND t.user_id = ? AND t.type = 'Customized'`;
 
-    return await this.executeQuery(sqlQuery, [projectId, userId]);
+    const templates = await this.executeQuery<Template>(sqlQuery, [projectId, userId]);
+
+    if (templates.length === 0) {
+      return [];
+    }
+
+    return templates;
   }
 
   // Create a new template with its texts (headline, punchline, cta)
