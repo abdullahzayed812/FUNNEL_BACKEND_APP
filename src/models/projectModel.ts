@@ -43,32 +43,24 @@ export class ProjectModel {
 
     const result = await this.executeQuery<Partial<Project>>(sqlQueryProjectsData, [userId]);
 
-    if (result.length === 0) {
-      throw new AppError(ERRORS.NO_PROJECTS_EXISTS, 404); // Not found error
-    }
-
     return result;
   }
 
   public async get(projectId: string): Promise<Partial<Project>> {
-    const sqlQuery = `SELECT p.id FROM projects p WHERE p.id = ?`;
+    const sqlQuery = `SELECT id FROM projects WHERE id = ?`;
     const result = await this.executeQuery<Partial<Project>>(sqlQuery, [projectId]);
-
-    if (result.length === 0) {
-      throw new AppError(ERRORS.PROJECT_NOT_FOUND, 404); // Not found error
-    }
 
     return result[0]; // Assuming projectId is unique
   }
 
   public async forward(projectId: string, usersIds: string[]) {
     if (!projectId || typeof projectId !== "string") {
-      throw new AppError(ERRORS.PROJECT_ID_NOT_SENT, 400); // Bad request error
+      return new AppError(ERRORS.PROJECT_ID_NOT_SENT, 400); // Bad request error
     }
 
     const exists = await this.projectExists(projectId);
     if (!exists) {
-      throw new AppError(ERRORS.PROJECT_NOT_FOUND, 404); // Not found error
+      return new AppError(ERRORS.PROJECT_NOT_FOUND, 404); // Not found error
     }
 
     const sqlQuery = `

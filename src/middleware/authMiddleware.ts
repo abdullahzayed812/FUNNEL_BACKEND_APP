@@ -69,7 +69,7 @@ export class AuthMiddleware {
 
     const projectExists = await this.projectModel.get(projectId);
 
-    if (!projectExists.id) {
+    if (!projectExists?.id) {
       return res.status(400).send({ error: ERRORS.PROJECT_NOT_FOUND });
     }
 

@@ -11,9 +11,7 @@ export class TemplateController {
 
   listDefaultTemplates: ExpressHandler = async (req, res) => {
     try {
-      const { projectId } = req.params;
-
-      const templates = await this.templateModel.listDefault(projectId, res.locals.userId);
+      const templates = await this.templateModel.listDefault();
 
       res.status(200).send({ templates });
     } catch (error: any) {

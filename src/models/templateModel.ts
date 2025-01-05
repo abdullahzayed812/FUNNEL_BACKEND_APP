@@ -21,7 +21,7 @@ export class TemplateModel {
   }
 
   // Get default templates for a specific project and user
-  public async listDefault(projectId: string, userId: string) {
+  public async listDefault() {
     const sqlQuery = `
       SELECT 
         t.id,
@@ -93,9 +93,9 @@ export class TemplateModel {
       LEFT JOIN template_text ht ON t.id = ht.template_id AND ht.type = 'headline'
       LEFT JOIN template_text pt ON t.id = pt.template_id AND pt.type = 'punchline'
       LEFT JOIN template_text ct ON t.id = ct.template_id AND ct.type = 'cta'
-      WHERE t.project_id = ? AND t.user_id = ? AND t.type = 'Default'`;
+      WHERE t.type = 'Default'`;
 
-    const templates = await this.executeQuery<Template>(sqlQuery, [projectId, userId]);
+    const templates = await this.executeQuery<Template>(sqlQuery);
 
     if (templates.length === 0) {
       return [];
@@ -195,7 +195,7 @@ export class TemplateModel {
     try {
       const sqlQueryInsertTemplate = `
         INSERT INTO templates 
-          (id, name, type, frame_svg, default_primary, default_secondary_color, is_selected, project_id, user_id) 
+          (id, name, type, frame_svg, default_primary, default_secondary_color, is_selected, project_id, user_id)
         VALUES 
           (?, ?, ?, ?, ?, ?, ?, ?, ?)`;
 
@@ -273,7 +273,8 @@ export class TemplateModel {
     const sqlQuery = `
       UPDATE templates 
       SET is_selected = ? 
-      WHERE id = ?`;
+      WHERE id = ?
+    `;
 
     const result = await this.executeQuery(sqlQuery, [status, templateId]);
 
