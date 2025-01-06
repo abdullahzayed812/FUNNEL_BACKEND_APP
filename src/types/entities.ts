@@ -100,6 +100,7 @@ export interface Project {
   name: string;
   description: string;
   website: string;
+  type: "Default" | "Customized";
 }
 
 export interface Branding {

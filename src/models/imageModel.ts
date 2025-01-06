@@ -34,7 +34,7 @@ export class ImageModel extends BaseModel {
 
       return images;
     } catch (error: any) {
-      throw new AppError(error, 500);
+      return new AppError(error);
     }
   }
 

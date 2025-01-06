@@ -19,17 +19,17 @@ export class UserController {
       const { email, username, password } = req.body;
 
       if (!email || !username || !password) {
-        res.status(400).send(ERRORS.USER_DATA_REQUIRED);
+        res.status(400).send({ error: ERRORS.USER_DATA_REQUIRED });
       }
 
       const usernameExists = await this.userModel.getUserByUsername(username);
       const userEmailExits = await this.userModel.getUserByEmail(email);
 
       if (usernameExists) {
-        res.status(400).send(ERRORS.DUPLICATE_USERNAME);
+        res.status(400).send({ error: ERRORS.DUPLICATE_USERNAME });
       }
       if (userEmailExits) {
-        res.status(400).send(ERRORS.DUPLICATE_EMAIL);
+        res.status(400).send({ error: ERRORS.DUPLICATE_EMAIL });
       }
 
       const user: User = {
@@ -56,17 +56,16 @@ export class UserController {
 
   public signIn: ExpressHandler = async (req, res) => {
     try {
-      const { login, password } = req.body;
+      const { email, password } = req.body;
 
-      if (!login || !password) {
-        res.status(400).send(ERRORS.USER_DATA_REQUIRED);
+      if (!email || !password) {
+        res.status(400).send({ error: ERRORS.USER_DATA_REQUIRED });
       }
 
-      const userExists =
-        (await this.userModel.getUserByEmail(login)) || (await this.userModel.getUserByUsername(login));
+      const userExists = await this.userModel.getUserByEmail(email);
 
-      if (!userExists) {
-        res.status(403).send(ERRORS.DUPLICATE_EMAIL);
+      if (!userExists?.id) {
+        res.status(403).send({ error: ERRORS.DUPLICATE_EMAIL });
       }
 
       // if (userExists?.password !== this.hashPassword(password)) {

@@ -16,6 +16,7 @@ export enum Endpoints {
 
   listProjects = "listProjects",
   forwardProject = "forwardProject",
+  createProject = "createProject",
 
   getBranding = "getBranding",
   updateBranding = "updateBranding",
@@ -53,6 +54,11 @@ export const ENDPOINT_CONFIGS: { [key in Endpoints]: EndpointConfig } = {
     url: "/api/v1/forward-project/:projectId",
     auth: true,
     requireProjectId: true,
+  },
+  [Endpoints.createProject]: {
+    method: "post",
+    url: "/api/v1/create-project",
+    auth: true,
   },
 
   [Endpoints.getBranding]: {

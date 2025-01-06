@@ -2,6 +2,7 @@ import { Pool } from "mysql2/promise";
 import { Project } from "../types/entities";
 import { AppError } from "../configs/error"; // Assuming AppError is in utils
 import { ERRORS } from "../configs/error";
+import { randomUUID } from "node:crypto";
 
 export class ProjectModel {
   private pool: Pool;
@@ -74,6 +75,44 @@ export class ProjectModel {
       await connection.query(sqlQuery, [values]);
     } finally {
       connection.release();
+    }
+  }
+
+  public async create(project: Project, userId: string, userRole: string) {
+    const { name, description, website } = project;
+
+    const newProject: Project = {
+      id: randomUUID(),
+      name,
+      description,
+      website,
+      type: userRole === "Admin" ? "Default" : "Customized",
+    };
+
+    const sqlQueryInsertProject = `
+      INSERT INTO projects (id, name, description, website, type)
+      VALUES (?,?,?,?,?)
+    `;
+
+    const sqlQueryInsertUserProjects = `
+      INSERT INTO user_projects (project_id, user_id)
+      VALUES (?,?)
+    `;
+
+    try {
+      const isProjectCreated = await this.executeQuery(sqlQueryInsertProject, [
+        newProject.id,
+        newProject.name,
+        newProject.description,
+        newProject.website,
+        newProject.type,
+      ]);
+
+      const isUserProjectsCreated = await this.executeQuery(sqlQueryInsertUserProjects, [newProject.id, userId]);
+
+      return { isProjectCreated, isUserProjectsCreated };
+    } catch (error: any) {
+      return new AppError(error);
     }
   }
 }

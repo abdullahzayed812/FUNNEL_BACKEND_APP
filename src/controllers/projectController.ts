@@ -9,16 +9,26 @@ export class ProjectController {
     this.projectModel = projectModel;
   }
 
+  private handleError(res: any, error: any, statusCode: number = 500): void {
+    console.log(error.message);
+    if (error instanceof AppError) {
+      res.status(statusCode).send({ error: error.message });
+    } else {
+      res.status(statusCode).send({ error: "Internal Server Error" });
+    }
+  }
+
+  private handleSuccess(res: any, data: any, statusCode: number = 200): void {
+    res.status(statusCode).send(data);
+  }
+
   listProjects: ExpressHandler = async (_, res) => {
     try {
       const projects = await this.projectModel.list(res.locals.userId);
-      res.status(200).send({ projects });
+
+      this.handleSuccess(res, { projects });
     } catch (error: any) {
-      if (error instanceof AppError) {
-        res.status(error.statusCode).send({ error: error.message });
-      } else {
-        res.status(500).send({ error: "An unexpected error occurred" });
-      }
+      this.handleError(res, error);
     }
   };
 
@@ -36,13 +46,24 @@ export class ProjectController {
 
     try {
       const result = await this.projectModel.forward(projectId, usersIds);
-      res.status(200).send({ result });
+
+      this.handleSuccess(res, { result });
     } catch (error: any) {
-      if (error instanceof AppError) {
-        res.status(error.statusCode).send({ error: error.message });
-      } else {
-        res.status(500).send({ error: "An unexpected error occurred" });
-      }
+      this.handleError(res, error);
+    }
+  };
+
+  createProject: ExpressHandler = async (req, res) => {
+    const { project } = req.body;
+
+    try {
+      const isCreated = await this.projectModel.create(project, res.locals.userId, res.locals.role);
+
+      console.log(isCreated);
+
+      this.handleSuccess(res, isCreated);
+    } catch (error) {
+      this.handleError(res, error);
     }
   };
 }
