@@ -18,7 +18,5 @@ CREATE TABLE IF NOT EXISTS template_text (
     y_coordinate    INT,
     color           VARCHAR(20),
     template_id     VARCHAR(255) NOT NULL,
-    project_id      VARCHAR(255) NOT NULL,
-    FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
     FOREIGN KEY (template_id) REFERENCES templates(id) ON DELETE CASCADE
 );

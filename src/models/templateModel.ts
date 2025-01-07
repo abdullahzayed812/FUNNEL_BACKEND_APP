@@ -1,26 +1,15 @@
 import { Pool } from "mysql2/promise";
-import { Template, TemplateText } from "../types/entities";
-import { AppError, ERRORS } from "../configs/error";
+import { Template } from "../types/entities";
+import { BaseModel } from "./baseModel";
 
-export class TemplateModel {
-  private pool: Pool;
+export class TemplateModel extends BaseModel {
+  protected pool: Pool;
 
   constructor(pool: Pool) {
+    super(pool);
     this.pool = pool;
   }
 
-  // Reusable query execution method
-  private async executeQuery<T>(query: string, params: any[] = []): Promise<T[]> {
-    const connection = await this.pool.getConnection();
-    try {
-      const [result] = await connection.query(query, params);
-      return result as T[];
-    } finally {
-      connection.release();
-    }
-  }
-
-  // Get default templates for a specific project and user
   public async listDefault() {
     const sqlQuery = `
       SELECT 
@@ -30,10 +19,8 @@ export class TemplateModel {
         t.frame_svg AS frameSvg,
         t.default_primary AS defaultPrimaryColor,
         t.default_secondary_color AS defaultSecondaryColor,
-        t.is_selected AS isSelected,
         t.created_at AS createdAt,
-        t.project_id AS projectId,
-        t.user_id AS userId,
+        ut.is_selected AS isSelected,
         JSON_OBJECT(
           'headline', JSON_OBJECT(
             'text', ht.text,
@@ -88,16 +75,16 @@ export class TemplateModel {
           )
         ) AS templateTexts
       FROM templates t
-      INNER JOIN projects p ON t.project_id = p.id
-      INNER JOIN users u ON t.user_id = u.id
       LEFT JOIN template_text ht ON t.id = ht.template_id AND ht.type = 'headline'
       LEFT JOIN template_text pt ON t.id = pt.template_id AND pt.type = 'punchline'
       LEFT JOIN template_text ct ON t.id = ct.template_id AND ct.type = 'cta'
-      WHERE t.type = 'Default'`;
+      LEFT JOIN user_templates ut ON t.id = ut.template_id
+      WHERE t.type = 'Default'
+    `;
 
     const templates = await this.executeQuery<Template>(sqlQuery);
 
-    if (templates.length === 0) {
+    if (templates?.length === 0) {
       return [];
     }
 
@@ -112,76 +99,76 @@ export class TemplateModel {
         t.name,
         t.type,
         t.frame_svg AS frameSvg,
-        t.default_primary AS defaultPrimaryColor,
-        t.default_secondary_color AS defaultSecondaryColor,
-        t.is_selected AS isSelected,
+        t.default_primary AS defaultPrimary,
+        t.default_secondary_color AS defaultSecondary,
         t.created_at AS createdAt,
-        t.project_id AS projectId,
-        t.user_id AS userId,
+        ut.is_selected AS isSelected,
         JSON_OBJECT(
-          'headline', JSON_OBJECT(
-            'text', ht.text,
-            'color', ht.color,
-            'containerColor', ht.container_color,
-            'fontSize', ht.font_size,
-            'fontWeight', ht.font_weight,
-            'fontFamily', ht.font_family,
-            'fontStyle', ht.font_style,
-            'textDecoration', ht.text_decoration,
-            'borderRadius', ht.border_radius,
-            'borderWidth', ht.border_width,
-            'borderStyle', ht.border_style,
-            'borderColor', ht.border_color,
-            'translateX', ht.x_coordinate,
-            'translateY', ht.y_coordinate,
-            'language', ht.language
-          ),
-          'punchline', JSON_OBJECT(
-            'text', pt.text,
-            'color', pt.color,
-            'containerColor', pt.container_color,
-            'fontSize', pt.font_size,
-            'fontWeight', pt.font_weight,
-            'fontFamily', pt.font_family,
-            'fontStyle', pt.font_style,
-            'textDecoration', pt.text_decoration,
-            'borderRadius', pt.border_radius,
-            'borderWidth', pt.border_width,
-            'borderStyle', pt.border_style,
-            'borderColor', pt.border_color,
-            'translateX', pt.x_coordinate,
-            'translateY', pt.y_coordinate,
-            'language', pt.language
-          ),
-          'cta', JSON_OBJECT(
-            'text', ct.text,
-            'color', ct.color,
-            'containerColor', ct.container_color,
-            'fontSize', ct.font_size,
-            'fontWeight', ct.font_weight,
-            'fontFamily', ct.font_family,
-            'fontStyle', ct.font_style,
-            'textDecoration', ct.text_decoration,
-            'borderRadius', ct.border_radius,
-            'borderWidth', ct.border_width,
-            'borderStyle', ct.border_style,
-            'borderColor', ct.border_color,
-            'translateX', ct.x_coordinate,
-            'translateY', ct.y_coordinate,
-            'language', ct.language
-          )
+            'headline', JSON_OBJECT(
+                'text', ht.text,
+                'color', ht.color,
+                'containerColor', ht.container_color,
+                'fontSize', ht.font_size,
+                'fontWeight', ht.font_weight,
+                'fontFamily', ht.font_family,
+                'fontStyle', ht.font_style,
+                'textDecoration', ht.text_decoration,
+                'borderRadius', ht.border_radius,
+                'borderWidth', ht.border_width,
+                'borderStyle', ht.border_style,
+                'borderColor', ht.border_color,
+                'translateX', ht.x_coordinate,
+                'translateY', ht.y_coordinate,
+                'language', ht.language
+            ),
+            'punchline', JSON_OBJECT(
+                'text', pt.text,
+                'color', pt.color,
+                'containerColor', pt.container_color,
+                'fontSize', pt.font_size,
+                'fontWeight', pt.font_weight,
+                'fontFamily', pt.font_family,
+                'fontStyle', pt.font_style,
+                'textDecoration', pt.text_decoration,
+                'borderRadius', pt.border_radius,
+                'borderWidth', pt.border_width,
+                'borderStyle', pt.border_style,
+                'borderColor', pt.border_color,
+                'translateX', pt.x_coordinate,
+                'translateY', pt.y_coordinate,
+                'language', pt.language
+            ),
+            'cta', JSON_OBJECT(
+                'text', ct.text,
+                'color', ct.color,
+                'containerColor', ct.container_color,
+                'fontSize', ct.font_size,
+                'fontWeight', ct.font_weight,
+                'fontFamily', ct.font_family,
+                'fontStyle', ct.font_style,
+                'textDecoration', ct.text_decoration,
+                'borderRadius', ct.border_radius,
+                'borderWidth', ct.border_width,
+                'borderStyle', ct.border_style,
+                'borderColor', ct.border_color,
+                'translateX', ct.x_coordinate,
+                'translateY', ct.y_coordinate,
+                'language', ct.language
+            )
         ) AS templateTexts
       FROM templates t
-      INNER JOIN projects p ON t.project_id = p.id
-      INNER JOIN users u ON t.user_id = u.id
       LEFT JOIN template_text ht ON t.id = ht.template_id AND ht.type = 'headline'
       LEFT JOIN template_text pt ON t.id = pt.template_id AND pt.type = 'punchline'
       LEFT JOIN template_text ct ON t.id = ct.template_id AND ct.type = 'cta'
-      WHERE t.project_id = ? AND t.user_id = ? AND t.type = 'Customized'`;
+      LEFT JOIN user_templates ut ON t.id = ut.template_id
+      WHERE ut.project_id = ?
+        AND ut.user_id = ?
+        AND t.type = 'Customized'
+    `;
 
     const templates = await this.executeQuery<Template>(sqlQuery, [projectId, userId]);
 
-    if (templates.length === 0) {
+    if (templates?.length === 0) {
       return [];
     }
 
@@ -189,43 +176,38 @@ export class TemplateModel {
   }
 
   // Create a new template with its texts (headline, punchline, cta)
-  public async create(template: Template, projectId: string, userId: string) {
-    const connection = await this.pool.getConnection();
+  public async create(template: Template, projectId: string, userId: string, userRole: string) {
+    const sqlQueryInsertTemplate = `
+      INSERT INTO templates 
+        (id, name, type, frame_svg, default_primary, default_secondary_color)
+      VALUES 
+        (?, ?, ?, ?, ?, ?)
+    `;
 
-    try {
-      const sqlQueryInsertTemplate = `
-        INSERT INTO templates 
-          (id, name, type, frame_svg, default_primary, default_secondary_color, is_selected, project_id, user_id)
-        VALUES 
-          (?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+    const sqlQueryInsertTemplateText = `
+      INSERT INTO template_text 
+        (id, type, font_size, font_family, font_weight, text_decoration, font_style, border_radius, border_width, 
+          border_style, border_color, container_color, language, x_coordinate, y_coordinate, color, 
+          template_id, text) 
+      VALUES 
+        (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `;
 
-      const sqlQueryInsertTemplateText = `
-        INSERT INTO template_text 
-          (id, type, font_size, font_family, font_weight, text_decoration, font_style, border_radius, border_width, 
-           border_style, border_color, container_color, language, x_coordinate, y_coordinate, color, project_id, 
-           template_id, text) 
-        VALUES 
-          (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+    const createdTemplate = await this.executeQuery(sqlQueryInsertTemplate, [
+      template.id,
+      template.name,
+      userRole === "Admin" ? "Default" : "Customized",
+      template.frameSvg,
+      template.defaultPrimary,
+      template.defaultSecondary,
+    ]);
 
-      // Insert Template
-      const [createdTemplate] = await connection.query(sqlQueryInsertTemplate, [
-        template.id,
-        template.name,
-        "Customized",
-        template.frameSvg,
-        template.defaultPrimary,
-        template.defaultSecondary,
-        template.isSelected,
-        projectId,
-        userId,
-      ]);
+    const { headline, punchline, cta } = template.templateTexts;
+    const texts = [headline, punchline, cta];
 
-      // Insert Template Texts (Headline, Punchline, CTA)
-      const { headline, punchline, cta } = template.templateTexts;
-      const texts = [headline, punchline, cta];
-
-      const insertPromises = texts.map((text) =>
-        connection.query(sqlQueryInsertTemplateText, [
+    const insertPromises = texts.map(
+      async (text) =>
+        await this.executeQuery(sqlQueryInsertTemplateText, [
           text.id,
           text.type,
           text.fontSize,
@@ -242,38 +224,51 @@ export class TemplateModel {
           text.translateX,
           text.translateY,
           text.color,
-          projectId,
           template.id,
           text.text,
         ])
-      );
+    );
 
-      await Promise.all(insertPromises); // Wait for all insertions to complete
+    await Promise.all(insertPromises);
 
-      return createdTemplate;
-    } finally {
-      connection.release();
+    if (userRole !== "Admin") {
+      await this.insertUserTemplate(userId, template.id, projectId, false);
     }
+
+    return createdTemplate;
   }
 
-  // Get a template by its ID for a given project and user
-  public async get(projectId: string, templateId: string, userId: string) {
+  public async getFromUserTemplates(projectId: string, templateId: string, userId: string) {
     const sqlQuery = `
-      SELECT id 
-      FROM templates 
-      WHERE id = ? AND project_id = ? AND user_id = ? AND type = 'Default'`;
+      SELECT ut.template_id 
+      FROM user_templates ut
+      INNER JOIN templates t ON ut.template_id = t.id
+      WHERE ut.template_id = ?
+        AND ut.project_id = ?
+        AND ut.user_id = ?
+        AND t.type = 'Default'
+    `;
 
-    const result = await this.executeQuery(sqlQuery, [templateId, projectId, userId]);
+    const templates = await this.executeQuery<Template>(sqlQuery, [templateId, projectId, userId]);
 
-    return result;
+    return templates[0];
   }
 
-  // Update the selection status of a template
+  public async getFromTemplates(templateId: string) {
+    const sqlQuery = `
+      SELECT * FROM templates WHERE id = ?
+    `;
+
+    const templates = await this.executeQuery<Template>(sqlQuery, [templateId]);
+
+    return templates[0];
+  }
+
   public async update(templateId: string, status: boolean) {
     const sqlQuery = `
-      UPDATE templates 
+      UPDATE user_templates
       SET is_selected = ? 
-      WHERE id = ?
+      WHERE template_id = ?
     `;
 
     const result = await this.executeQuery(sqlQuery, [status, templateId]);
@@ -281,13 +276,31 @@ export class TemplateModel {
     return result;
   }
 
-  // Delete a template by its ID
   public async delete(templateId: string) {
     const sqlQuery = `
-      DELETE FROM templates 
-      WHERE id = ? AND type = 'Default'`;
+      DELETE FROM templates
+      WHERE id = ? AND type = 'Default'
+    `;
+
+    const sqlQueryDeleteUserTemplate = `
+      DELETE FROM user_templates
+      WHERE template_id = ?
+    `;
 
     const result = await this.executeQuery(sqlQuery, [templateId]);
+
+    return result;
+  }
+
+  public async insertUserTemplate(userId: string, templateId: string, projectId: string, status: boolean) {
+    const sqlQuery = `
+      INSERT INTO user_templates 
+        (user_id, template_id, project_id, is_selected)
+      VALUES
+        (?, ?, ?, ?) 
+    `;
+
+    const result = await this.executeQuery(sqlQuery, [userId, templateId, projectId, status]);
 
     return result;
   }

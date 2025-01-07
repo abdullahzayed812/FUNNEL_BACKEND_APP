@@ -24,7 +24,7 @@ export class ProjectController {
 
   listProjects: ExpressHandler = async (_, res) => {
     try {
-      const projects = await this.projectModel.list(res.locals.userId);
+      const projects = await this.projectModel.list(res.locals.userId, res.locals.role);
 
       this.handleSuccess(res, { projects });
     } catch (error: any) {

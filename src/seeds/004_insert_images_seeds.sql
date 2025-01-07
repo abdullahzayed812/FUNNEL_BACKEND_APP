@@ -1,4 +1,4 @@
-INSERT INTO images (id, file_path, image_type, is_selected, project_id, user_id)
+INSERT INTO images (id, file_path, image_type)
 VALUES
-  ('image_1', '/images/image1.jpg', 'Default', true, 'project_1', "user_1"),
-  ('image_2', '/images/image2.jpg', 'Default', false, 'project_2', "user_2");
+  ('image_1', '/images/image1.jpg', 'Default'),
+  ('image_2', '/images/image2.jpg', 'Default');

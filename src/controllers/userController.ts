@@ -19,17 +19,17 @@ export class UserController {
       const { email, username, password } = req.body;
 
       if (!email || !username || !password) {
-        res.status(400).send({ error: ERRORS.USER_DATA_REQUIRED });
+        return res.status(400).send({ error: ERRORS.USER_DATA_REQUIRED });
       }
 
       const usernameExists = await this.userModel.getUserByUsername(username);
       const userEmailExits = await this.userModel.getUserByEmail(email);
 
       if (usernameExists) {
-        res.status(400).send({ error: ERRORS.DUPLICATE_USERNAME });
+        return res.status(400).send({ error: ERRORS.DUPLICATE_USERNAME });
       }
       if (userEmailExits) {
-        res.status(400).send({ error: ERRORS.DUPLICATE_EMAIL });
+        return res.status(400).send({ error: ERRORS.DUPLICATE_EMAIL });
       }
 
       const user: User = {
@@ -45,12 +45,12 @@ export class UserController {
 
       const jwt = signJwt({ userId: user.id, role: user.role });
 
-      res.status(201).send({
+      return res.status(201).send({
         accessToken: jwt,
         user: { id: user.id, email: user.email, username: user.username, createdAt: user.createdAt },
       });
     } catch (error: any) {
-      res.status(400).send({ error: error.message });
+      return res.status(400).send({ error: error.message });
     }
   };
 
@@ -65,7 +65,7 @@ export class UserController {
       const userExists = await this.userModel.getUserByEmail(email);
 
       if (!userExists?.id) {
-        res.status(403).send({ error: ERRORS.DUPLICATE_EMAIL });
+        res.status(403).send({ error: ERRORS.USER_NOT_FOUND });
       }
 
       // if (userExists?.password !== this.hashPassword(password)) {
@@ -74,7 +74,7 @@ export class UserController {
 
       const jwt = signJwt({ userId: userExists!.id, role: userExists!.role });
 
-      res.status(200).send({
+      return res.status(200).send({
         user: {
           id: userExists?.id,
           email: userExists?.email,
@@ -84,7 +84,7 @@ export class UserController {
         accessToken: jwt,
       });
     } catch (error: any) {
-      res.status(400).send({ error: error.message });
+      return res.status(400).send({ error: error.message });
     }
   };
 
@@ -95,10 +95,10 @@ export class UserController {
       if (userRole === "Admin") {
         const users = await this.userModel.listUsers();
 
-        res.status(200).send({ users });
+        return res.status(200).send({ users });
       }
     } catch (error: any) {
-      res.status(400).send({ error: error.message });
+      return res.status(400).send({ error: error.message });
     }
   };
 
@@ -110,10 +110,10 @@ export class UserController {
       if (userRole === "Admin") {
         const users = await this.userModel.listForwarded(projectId);
 
-        res.status(200).send({ users });
+        return res.status(200).send({ users });
       }
     } catch (error: any) {
-      res.status(400).send({ error: error.message });
+      return res.status(400).send({ error: error.message });
     }
   };
 

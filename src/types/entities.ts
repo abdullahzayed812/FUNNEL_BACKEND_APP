@@ -72,7 +72,7 @@ export interface TemplateText {
 }
 
 export interface Template {
-  id: number | string;
+  id: string;
   name: string;
   type: string;
   frameSvg: string;

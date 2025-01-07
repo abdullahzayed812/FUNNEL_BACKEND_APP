@@ -30,26 +30,40 @@ export class ProjectModel {
     return result.length > 0;
   }
 
-  public async list(userId: string) {
-    const sqlQueryProjectsData = `
+  public async list(userId: string, userRole: string) {
+    const sqlQueryUserProjects = `
       SELECT 
         p.id,
         p.name,
         p.description,
         p.website
-      FROM users u
-      INNER JOIN user_projects up ON up.user_id = u.id
-      INNER JOIN projects p ON p.id = up.project_id
-      WHERE u.id = ?`;
+      FROM projects p
+      INNER JOIN user_projects up ON up.project_id = p.id
+      INNER JOIN users u ON u.id = up.user_id
+      WHERE u.id = ?
+    `;
 
-    const result = await this.executeQuery<Partial<Project>>(sqlQueryProjectsData, [userId]);
+    const sqlQueryDefaultProjects = `
+      SELECT id, name, description, website FROM projects WHERE type = 'Default'
+    `;
 
-    return result;
+    const userProjects = await this.executeQuery<Project>(sqlQueryUserProjects, [userId]);
+    let defaultProjects: Project[] = [];
+
+    if (userRole !== "Admin") {
+      defaultProjects = await this.executeQuery<Project>(sqlQueryDefaultProjects);
+    }
+
+    if (userProjects?.length > 0) {
+      return [...userProjects, ...defaultProjects];
+    }
+
+    return [];
   }
 
-  public async get(projectId: string): Promise<Partial<Project>> {
+  public async get(projectId: string): Promise<Project> {
     const sqlQuery = `SELECT id FROM projects WHERE id = ?`;
-    const result = await this.executeQuery<Partial<Project>>(sqlQuery, [projectId]);
+    const result = await this.executeQuery<Project>(sqlQuery, [projectId]);
 
     return result[0]; // Assuming projectId is unique
   }

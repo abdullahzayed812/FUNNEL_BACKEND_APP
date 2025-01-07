@@ -48,7 +48,7 @@ export class TemplateController {
       const { projectId } = req.params;
       const { template } = req.body;
 
-      const isCreated = await this.templateModel.create(template, projectId, res.locals.userId);
+      const isCreated = await this.templateModel.create(template, projectId, res.locals.userId, res.locals.role);
 
       this.handleSuccess(res, isCreated);
     } catch (error: any) {
@@ -61,15 +61,22 @@ export class TemplateController {
       const { projectId } = req.params;
       const { templateId, status } = req.body;
 
-      const templateExists = await this.templateModel.get(projectId, templateId, res.locals.userId);
+      const templateExistsForUser = await this.templateModel.getFromUserTemplates(
+        projectId,
+        templateId,
+        res.locals.userId
+      );
+      const templateExistsInTemplates = await this.templateModel.getFromTemplates(templateId);
 
-      if (!templateExists) {
-        this.handleError(res, { error: "Template id is required." }, 400);
+      if (templateExistsForUser?.id) {
+        const result = await this.templateModel.update(templateId, status);
+        this.handleSuccess(res, result);
+      } else if (templateExistsInTemplates?.id) {
+        const result = await this.templateModel.insertUserTemplate(res.locals.userId, templateId, projectId, true);
+        this.handleSuccess(res, result);
+      } else {
+        this.handleError(res, { error: "Template not found." });
       }
-
-      const result = await this.templateModel.update(templateId, status);
-
-      this.handleSuccess(res, result);
     } catch (error: any) {
       this.handleError(res, error);
     }
@@ -80,10 +87,10 @@ export class TemplateController {
       const { projectId } = req.params;
       const { templateId } = req.body;
 
-      const templateExists = await this.templateModel.get(projectId, templateId, res.locals.userId);
+      const templateExists = await this.templateModel.getFromUserTemplates(projectId, templateId, res.locals.userId);
 
-      if (!templateExists) {
-        this.handleError(res, { error: "Template id is required." }, 400);
+      if (!templateExists?.id) {
+        this.handleError(res, { error: "Template not found." }, 400);
       }
 
       const result = await this.templateModel.delete(templateId);

@@ -42,12 +42,12 @@ export class AuthMiddleware {
 
     const user = await this.userModel.getUserById(jwtPayload.userId);
 
-    if (!user) {
+    if (!user?.id) {
       return res.status(401).send({ error: ERRORS.USER_NOT_FOUND });
     }
 
-    res.locals.userId = user.id;
-    res.locals.role = user.role;
+    res.locals.userId = user?.id;
+    res.locals.role = user?.role;
 
     return next();
   };

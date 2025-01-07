@@ -31,42 +31,36 @@ export class UserModel extends BaseModel {
   }
 
   async getUserByEmail(email: string): Promise<User | undefined> {
-    const sqlQuery = "SELECT email FROM users WHERE email = ?";
+    const sqlQuery = "SELECT id, username, email, created_at as createdAt FROM users WHERE email = ?";
 
-    const [users] = await this.executeQuery<RowDataPacket>(sqlQuery, [email]);
+    const users = await this.executeQuery<User>(sqlQuery, [email]);
 
     if (users?.length > 0) {
-      const user = users[0];
-
-      return { ...user, createdAt: user.created_at } as User;
+      return users[0];
     }
 
     return undefined;
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
-    const sqlQuery = "SELECT * FROM users WHERE username = ?";
+    const sqlQuery = "SELECT id, username, email, created_at as createdAt FROM users WHERE username = ?";
 
-    const [users] = await this.executeQuery<RowDataPacket>(sqlQuery, [username]);
+    const users = await this.executeQuery<User>(sqlQuery, [username]);
 
     if (users?.length > 0) {
-      const user = users[0];
-
-      return { ...user, createdAt: user.created_at } as User;
+      return users[0];
     }
 
     return undefined;
   }
 
   public async getUserById(id: string): Promise<User | undefined> {
-    const sqlQuery = "SELECT * FROM users WHERE id = ?";
+    const sqlQuery = "SELECT id, username, email, role, created_at as createdAt FROM users WHERE id = ?";
 
-    const [users] = await this.executeQuery<RowDataPacket>(sqlQuery, [id]);
+    const users = await this.executeQuery<User>(sqlQuery, [id]);
 
     if (users?.length > 0) {
-      const user = users[0];
-
-      return { ...user, createdAt: user.created_at } as User;
+      return users[0];
     }
 
     return undefined;
@@ -83,13 +77,13 @@ export class UserModel extends BaseModel {
   public async listUsers() {
     const sqlQuery = "SELECT id, username, email FROM users";
 
-    const [users] = await this.executeQuery<RowDataPacket>(sqlQuery);
+    const users = await this.executeQuery<User>(sqlQuery);
 
     if (users?.length > 0) {
       return users;
     }
 
-    return undefined;
+    return [];
   }
 
   public async listForwarded(projectId: string) {
@@ -100,12 +94,12 @@ export class UserModel extends BaseModel {
       WHERE up.project_id = ?;    
     `;
 
-    const [users] = await this.executeQuery<RowDataPacket>(sqlQuery, [projectId]);
+    const users = await this.executeQuery<User>(sqlQuery, [projectId]);
 
     if (users?.length > 0) {
       return users;
     }
 
-    return undefined;
+    return [];
   }
 }
