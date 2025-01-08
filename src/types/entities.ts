@@ -101,6 +101,8 @@ export interface Project {
 }
 
 export interface Branding {
+  id: string;
+  type: string;
   primaryColor: string;
   secondaryColor: string;
   additionalColor: string;

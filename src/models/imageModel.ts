@@ -11,20 +11,6 @@ export class ImageModel extends BaseModel {
   }
 
   public async list(projectId: string, userId: string) {
-    // const sqlQueryImages = `
-    //   SELECT
-    //     i.id AS id,
-    //     i.file_path AS url,
-    //     i.image_type AS imageType,
-    //     CASE
-    //       WHEN ui.user_id = ? AND ui.project_id = ? THEN ui.is_selected
-    //       ELSE NULL
-    //     END AS isSelected
-    //   FROM images i
-    //   LEFT JOIN user_images ui ON i.id = ui.image_id
-    //   WHERE i.project_id = ?
-    // `;
-
     const sqlQueryImages = `
       SELECT 
         i.id AS id,
