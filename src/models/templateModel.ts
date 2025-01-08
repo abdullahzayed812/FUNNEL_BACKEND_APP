@@ -10,7 +10,7 @@ export class TemplateModel extends BaseModel {
     this.pool = pool;
   }
 
-  public async listDefault() {
+  public async listDefault(userId: string, projectId: string) {
     const sqlQuery = `
       SELECT 
         t.id,
@@ -20,7 +20,10 @@ export class TemplateModel extends BaseModel {
         t.default_primary AS defaultPrimaryColor,
         t.default_secondary_color AS defaultSecondaryColor,
         t.created_at AS createdAt,
-        ut.is_selected AS isSelected,
+        CASE
+          WHEN ut.user_id = ? AND ut.project_id = ? THEN ut.is_selected
+          ELSE NULL
+        END AS isSelected,
         JSON_OBJECT(
           'headline', JSON_OBJECT(
             'text', ht.text,
@@ -82,7 +85,7 @@ export class TemplateModel extends BaseModel {
       WHERE t.type = 'Default'
     `;
 
-    const templates = await this.executeQuery<Template>(sqlQuery);
+    const templates = await this.executeQuery<Template>(sqlQuery, [userId, projectId]);
 
     if (templates?.length === 0) {
       return [];
@@ -240,13 +243,12 @@ export class TemplateModel extends BaseModel {
 
   public async getFromUserTemplates(projectId: string, templateId: string, userId: string) {
     const sqlQuery = `
-      SELECT ut.template_id 
+      SELECT ut.template_id AS id
       FROM user_templates ut
       INNER JOIN templates t ON ut.template_id = t.id
       WHERE ut.template_id = ?
         AND ut.project_id = ?
         AND ut.user_id = ?
-        AND t.type = 'Default'
     `;
 
     const templates = await this.executeQuery<Template>(sqlQuery, [templateId, projectId, userId]);
@@ -265,13 +267,17 @@ export class TemplateModel extends BaseModel {
   }
 
   public async update(templateId: string, status: boolean) {
-    const sqlQuery = `
+    const sqlQueryUpdateUserTemplate = `
       UPDATE user_templates
       SET is_selected = ? 
       WHERE template_id = ?
     `;
+    const result = await this.executeQuery(sqlQueryUpdateUserTemplate, [status, templateId]);
 
-    const result = await this.executeQuery(sqlQuery, [status, templateId]);
+    const sqlQueryDeleteUnSelected = `
+      DELETE FROM user_templates WHERE is_selected = false
+    `;
+    await this.executeQuery(sqlQueryDeleteUnSelected);
 
     return result;
   }

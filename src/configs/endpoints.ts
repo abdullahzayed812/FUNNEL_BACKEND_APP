@@ -109,8 +109,9 @@ export const ENDPOINT_CONFIGS: { [key in Endpoints]: EndpointConfig } = {
   },
   [Endpoints.listDefaultTemplates]: {
     method: "get",
-    url: "/api/v1/project-templates",
+    url: "/api/v1/project-templates/:projectId",
     auth: true,
+    requireProjectId: true,
   },
   [Endpoints.listCustomizedTemplates]: {
     method: "get",

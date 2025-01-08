@@ -28,10 +28,6 @@ export class ImageModel extends BaseModel {
     try {
       const images = await this.executeQuery(sqlQuery, [projectId, userId]);
 
-      if (images.length === 0) {
-        return [];
-      }
-
       return images;
     } catch (error: any) {
       return new AppError(error);

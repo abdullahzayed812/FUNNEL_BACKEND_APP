@@ -11,19 +11,21 @@ export class TemplateController {
 
   private handleError(res: any, error: any, statusCode: number = 500): void {
     if (error instanceof Error) {
-      res.status(statusCode).send({ error: error.message });
+      return res.status(statusCode).send({ error: error.message });
     } else {
-      res.status(statusCode).send({ error: "Internal Server Error" });
+      return res.status(statusCode).send({ error: "Internal Server Error" });
     }
   }
 
   private handleSuccess(res: any, data: any, statusCode: number = 200): void {
-    res.status(statusCode).send(data);
+    return res.status(statusCode).send(data);
   }
 
   listDefaultTemplates: ExpressHandler = async (req, res) => {
+    const { projectId } = req.params;
+
     try {
-      const templates = await this.templateModel.listDefault();
+      const templates = await this.templateModel.listDefault(res.locals.userId, projectId);
 
       this.handleSuccess(res, { templates });
     } catch (error: any) {
@@ -72,7 +74,7 @@ export class TemplateController {
         const result = await this.templateModel.update(templateId, status);
         this.handleSuccess(res, result);
       } else if (templateExistsInTemplates?.id) {
-        const result = await this.templateModel.insertUserTemplate(res.locals.userId, templateId, projectId, true);
+        const result = await this.templateModel.insertUserTemplate(res.locals.userId, templateId, projectId, status);
         this.handleSuccess(res, result);
       } else {
         this.handleError(res, { error: "Template not found." });

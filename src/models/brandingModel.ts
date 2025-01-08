@@ -38,7 +38,7 @@ export class BrandingModel {
 
     const branding = await this.executeQuery(sqlQuery, [projectId, userId]);
 
-    return branding.length > 0 ? branding[0] : {}; // Return null if no result
+    return branding.length > 0 ? branding[0] : {};
   }
 
   public async update(branding: Branding, projectId: string, userId: string) {
@@ -65,6 +65,8 @@ export class BrandingModel {
     ];
 
     const result = await this.executeQuery(sqlQuery, bindValues);
+
+    console.log(result);
 
     return result;
   }
