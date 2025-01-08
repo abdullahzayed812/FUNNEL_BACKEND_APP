@@ -32,7 +32,9 @@ export class ImageController {
   public listImages: ExpressHandler = async (req, res) => {
     try {
       const { projectId } = req.params;
+
       const images = await this.imageModel.list(projectId, res.locals.userId);
+
       this.handleSuccess(res, { images });
     } catch (error: any) {
       this.handleError(res, error);
@@ -42,8 +44,20 @@ export class ImageController {
   public updateImageSelection: ExpressHandler = async (req, res) => {
     try {
       const { imageId, status } = req.body;
-      const result = await this.imageModel.update(imageId, status);
-      this.handleSuccess(res, result, 200);
+      const { projectId } = req.params;
+
+      const imageExistsForUser = await this.imageModel.getFromUserImages(imageId, res.locals.userId, projectId);
+      const imageExistsInImages = await this.imageModel.getFromImages(imageId);
+
+      if (imageExistsForUser?.id) {
+        const result = await this.imageModel.update(imageId, status);
+        this.handleSuccess(res, result, 200);
+      } else if (imageExistsInImages?.id) {
+        const result = await this.imageModel.insertUserImage(imageId, res.locals.userId, projectId, status);
+        this.handleSuccess(res, result, 200);
+      } else {
+        this.handleError(res, { error: "Image not found." });
+      }
     } catch (error: any) {
       this.handleError(res, error);
     }
@@ -52,8 +66,11 @@ export class ImageController {
   deleteImage: ExpressHandler = async (req, res) => {
     try {
       const { imageId } = req.body;
+      const { projectId } = req.params;
 
-      const image = await this.imageModel.get(imageId);
+      // TODO: Handle admin deletion.
+
+      const image = await this.imageModel.getFromUserImages(imageId, res.locals.userId, projectId);
 
       if (!image?.id) {
         return res.status(404).send({ error: "Image not found" });
@@ -81,8 +98,9 @@ export class ImageController {
 
   public uploadImage: ExpressHandler = async (req, res, next) => {
     const { projectId } = req.params;
-    const userId = res.locals.userId;
+
     const userRole = res.locals.role;
+    const userId = res.locals.userId;
 
     upload.single("image")(req, res, async (err) => {
       if (err) {
@@ -99,14 +117,11 @@ export class ImageController {
         id: randomUUID(),
         filePath: `uploads/${file?.filename}`,
         imageType: userRole === "Admin" ? "Default" : "Customized",
-        isSelected: false,
-        projectId,
-        userId,
       };
 
       try {
-        await this.imageModel.create(image);
-        this.handleSuccess(res, { image }, 201);
+        const result = await this.imageModel.create(image, userId, userRole, projectId);
+        this.handleSuccess(res, result, 201);
       } catch (error: any) {
         this.handleError(res, error);
       }

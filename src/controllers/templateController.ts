@@ -1,4 +1,3 @@
-import { AppError, ERRORS } from "../configs/error";
 import { TemplateModel } from "../models/templateModel";
 import { ExpressHandler } from "../types/apis";
 

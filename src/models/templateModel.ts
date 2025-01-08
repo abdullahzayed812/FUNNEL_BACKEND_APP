@@ -83,9 +83,10 @@ export class TemplateModel extends BaseModel {
       LEFT JOIN template_text ct ON t.id = ct.template_id AND ct.type = 'cta'
       LEFT JOIN user_templates ut ON t.id = ut.template_id
       WHERE t.type = 'Default'
+        AND t.project_id = ?
     `;
 
-    const templates = await this.executeQuery<Template>(sqlQuery, [userId, projectId]);
+    const templates = await this.executeQuery<Template>(sqlQuery, [userId, projectId, projectId]);
 
     if (templates?.length === 0) {
       return [];
@@ -167,9 +168,10 @@ export class TemplateModel extends BaseModel {
       WHERE ut.project_id = ?
         AND ut.user_id = ?
         AND t.type = 'Customized'
+        AND t.project_id = ?
     `;
 
-    const templates = await this.executeQuery<Template>(sqlQuery, [projectId, userId]);
+    const templates = await this.executeQuery<Template>(sqlQuery, [projectId, userId, projectId]);
 
     if (templates?.length === 0) {
       return [];
@@ -182,9 +184,9 @@ export class TemplateModel extends BaseModel {
   public async create(template: Template, projectId: string, userId: string, userRole: string) {
     const sqlQueryInsertTemplate = `
       INSERT INTO templates 
-        (id, name, type, frame_svg, default_primary, default_secondary_color)
+        (id, name, type, frame_svg, default_primary, default_secondary_color, project_id)
       VALUES 
-        (?, ?, ?, ?, ?, ?)
+        (?, ?, ?, ?, ?, ?, ?)
     `;
 
     const sqlQueryInsertTemplateText = `
@@ -203,6 +205,7 @@ export class TemplateModel extends BaseModel {
       template.frameSvg,
       template.defaultPrimary,
       template.defaultSecondary,
+      projectId,
     ]);
 
     const { headline, punchline, cta } = template.templateTexts;
@@ -274,18 +277,13 @@ export class TemplateModel extends BaseModel {
     `;
     const result = await this.executeQuery(sqlQueryUpdateUserTemplate, [status, templateId]);
 
-    const sqlQueryDeleteUnSelected = `
-      DELETE FROM user_templates WHERE is_selected = false
-    `;
-    await this.executeQuery(sqlQueryDeleteUnSelected);
-
     return result;
   }
 
   public async delete(templateId: string) {
     const sqlQuery = `
       DELETE FROM templates
-      WHERE id = ? AND type = 'Default'
+      WHERE id = ? AND type = 'Customized'
     `;
 
     const sqlQueryDeleteUserTemplate = `
@@ -293,9 +291,10 @@ export class TemplateModel extends BaseModel {
       WHERE template_id = ?
     `;
 
-    const result = await this.executeQuery(sqlQuery, [templateId]);
+    const result1 = await this.executeQuery(sqlQuery, [templateId]);
+    const result2 = await this.executeQuery(sqlQueryDeleteUserTemplate, [templateId]);
 
-    return result;
+    return { result1, result2 };
   }
 
   public async insertUserTemplate(userId: string, templateId: string, projectId: string, status: boolean) {
