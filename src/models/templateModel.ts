@@ -83,10 +83,9 @@ export class TemplateModel extends BaseModel {
       LEFT JOIN template_text ct ON t.id = ct.template_id AND ct.type = 'cta'
       LEFT JOIN user_templates ut ON t.id = ut.template_id
       WHERE t.type = 'Default'
-        AND t.project_id = ?
     `;
 
-    const templates = await this.executeQuery<Template>(sqlQuery, [userId, projectId, projectId]);
+    const templates = await this.executeQuery<Template>(sqlQuery, [userId, projectId]);
 
     if (templates?.length === 0) {
       return [];

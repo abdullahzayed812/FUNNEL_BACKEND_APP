@@ -37,6 +37,7 @@ export class ProjectModel {
         p.name,
         p.description,
         p.website
+        p.type
       FROM projects p
       INNER JOIN user_projects up ON up.project_id = p.id
       INNER JOIN users u ON u.id = up.user_id
@@ -54,11 +55,7 @@ export class ProjectModel {
       defaultProjects = await this.executeQuery<Project>(sqlQueryDefaultProjects);
     }
 
-    if (userProjects?.length > 0) {
-      return [...userProjects, ...defaultProjects];
-    }
-
-    return [];
+    return [...userProjects, ...defaultProjects];
   }
 
   public async get(projectId: string): Promise<Project> {

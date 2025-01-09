@@ -115,7 +115,7 @@ export class ImageController {
 
       const image: Image = {
         id: randomUUID(),
-        filePath: `uploads/${file?.filename}`,
+        filePath: path.join("uploads", file?.filename),
         imageType: userRole === "Admin" ? "Default" : "Customized",
       };
 
