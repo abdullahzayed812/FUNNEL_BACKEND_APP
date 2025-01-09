@@ -20,23 +20,25 @@ export class GeneratedVisualsModel {
   }
 
   // Get selected images for a specific project and user
-  public async getSelectedImages(projectId: string, userId: string) {
+  public async getSelectedImages(userId: string) {
     const sqlQuery = `
       SELECT 
         id,
         file_path AS url,
         image_type AS imageType,
         is_selected AS isSelected
-      FROM images 
-      WHERE project_id = ? AND user_id = ? AND is_selected = ?`;
+      FROM images i
+      INNER JOIN user_images ui ON i.id = ui.image_id
+      WHERE ui.user_id = ? AND ui.is_selected = TRUE
+    `;
 
-    const images = await this.executeQuery<Image>(sqlQuery, [projectId, userId, true]);
+    const images = await this.executeQuery<Image>(sqlQuery, [userId]);
 
     return images;
   }
 
   // Get selected templates for a specific project and user, including headline, punchline, and CTA texts
-  public async getSelectedTemplates(projectId: string, userId: string) {
+  public async getSelectedTemplates(userId: string) {
     const sqlQuery = `
       SELECT 
         t.id,
@@ -45,10 +47,7 @@ export class GeneratedVisualsModel {
         t.frame_svg AS frameSvg,
         t.default_primary AS defaultPrimaryColor,
         t.default_secondary_color AS defaultSecondaryColor,
-        t.is_selected AS isSelected,
         t.created_at AS createdAt,
-        t.project_id AS projectId,
-        t.user_id AS userId,
         JSON_OBJECT(
           'headline', JSON_OBJECT(
             'text', ht.text,
@@ -103,16 +102,15 @@ export class GeneratedVisualsModel {
           )
         ) AS templateTexts
       FROM templates t
-      INNER JOIN projects p ON t.project_id = p.id
-      INNER JOIN users u ON t.user_id = u.id
+      INNER JOIN user_templates ut ON t.id = ut.template_id
       LEFT JOIN template_text ht ON t.id = ht.template_id AND ht.type = 'headline'
       LEFT JOIN template_text pt ON t.id = pt.template_id AND pt.type = 'punchline'
       LEFT JOIN template_text ct ON t.id = ct.template_id AND ct.type = 'cta'
-      WHERE t.project_id = ?
-      AND t.user_id = ?
-      AND t.is_selected = ?`;
+      WHERE ut.user_id = ?
+      AND ut.is_selected = TRUE
+    `;
 
-    const templates = await this.executeQuery(sqlQuery, [projectId, userId, true]);
+    const templates = await this.executeQuery(sqlQuery, [userId]);
 
     return templates;
   }

@@ -1,4 +1,3 @@
-import { AppError } from "../configs/error";
 import { ExpressHandler } from "../types/apis";
 import { GeneratedVisualsModel } from "../models/generatedVisualsModle";
 
@@ -21,11 +20,10 @@ export class GeneratedVisualsController {
 
   public getGeneratedVisuals: ExpressHandler = async (req, res) => {
     try {
-      const { projectId } = req.params;
       const userId = res.locals.userId;
 
-      const images = await this.generatedVisualsModel.getSelectedImages(projectId, userId);
-      const templates = await this.generatedVisualsModel.getSelectedTemplates(projectId, userId);
+      const images = await this.generatedVisualsModel.getSelectedImages(userId);
+      const templates = await this.generatedVisualsModel.getSelectedTemplates(userId);
 
       this.handleSuccess(res, { generatedContent: { templates, images } });
     } catch (error: any) {
