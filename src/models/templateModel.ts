@@ -1,6 +1,7 @@
 import { Pool } from "mysql2/promise";
 import { Template } from "../types/entities";
 import { BaseModel } from "./baseModel";
+import { randomUUID } from "crypto";
 
 export class TemplateModel extends BaseModel {
   protected pool: Pool;
@@ -21,7 +22,7 @@ export class TemplateModel extends BaseModel {
         t.default_secondary_color AS defaultSecondaryColor,
         t.created_at AS createdAt,
         CASE
-          WHEN ut.user_id = ? AND ut.project_id = ? THEN ut.is_selected
+          WHEN ut.user_id = ? THEN ut.is_selected
           ELSE NULL
         END AS isSelected,
         JSON_OBJECT(
@@ -94,7 +95,90 @@ export class TemplateModel extends BaseModel {
     return templates;
   }
 
-  // Get customized templates for a specific project and user
+  public async listBranded(userId: string, projectId: string) {
+    const sqlQuery = `
+      SELECT 
+        t.id,
+        t.name,
+        t.type,
+        t.frame_svg AS frameSvg,
+        t.default_primary AS defaultPrimaryColor,
+        t.default_secondary_color AS defaultSecondaryColor,
+        t.created_at AS createdAt,
+        CASE
+          WHEN ut.user_id = ? THEN ut.is_selected
+          ELSE NULL
+        END AS isSelected,
+        JSON_OBJECT(
+          'headline', JSON_OBJECT(
+            'text', ht.text,
+            'color', ht.color,
+            'containerColor', ht.container_color,
+            'fontSize', ht.font_size,
+            'fontWeight', ht.font_weight,
+            'fontFamily', ht.font_family,
+            'fontStyle', ht.font_style,
+            'textDecoration', ht.text_decoration,
+            'borderRadius', ht.border_radius,
+            'borderWidth', ht.border_width,
+            'borderStyle', ht.border_style,
+            'borderColor', ht.border_color,
+            'translateX', ht.x_coordinate,
+            'translateY', ht.y_coordinate,
+            'language', ht.language
+          ),
+          'punchline', JSON_OBJECT(
+            'text', pt.text,
+            'color', pt.color,
+            'containerColor', pt.container_color,
+            'fontSize', pt.font_size,
+            'fontWeight', pt.font_weight,
+            'fontFamily', pt.font_family,
+            'fontStyle', pt.font_style,
+            'textDecoration', pt.text_decoration,
+            'borderRadius', pt.border_radius,
+            'borderWidth', pt.border_width,
+            'borderStyle', pt.border_style,
+            'borderColor', pt.border_color,
+            'translateX', pt.x_coordinate,
+            'translateY', pt.y_coordinate,
+            'language', pt.language
+          ),
+          'cta', JSON_OBJECT(
+            'text', ct.text,
+            'color', ct.color,
+            'containerColor', ct.container_color,
+            'fontSize', ct.font_size,
+            'fontWeight', ct.font_weight,
+            'fontFamily', ct.font_family,
+            'fontStyle', ct.font_style,
+            'textDecoration', ct.text_decoration,
+            'borderRadius', ct.border_radius,
+            'borderWidth', ct.border_width,
+            'borderStyle', ct.border_style,
+            'borderColor', ct.border_color,
+            'translateX', ct.x_coordinate,
+            'translateY', ct.y_coordinate,
+            'language', ct.language
+          )
+        ) AS templateTexts
+      FROM templates t
+      LEFT JOIN template_text ht ON t.id = ht.template_id AND ht.type = 'headline'
+      LEFT JOIN template_text pt ON t.id = pt.template_id AND pt.type = 'punchline'
+      LEFT JOIN template_text ct ON t.id = ct.template_id AND ct.type = 'cta'
+      LEFT JOIN user_templates ut ON t.id = ut.template_id
+      WHERE t.type = 'Branded'
+    `;
+
+    const templates = await this.executeQuery<Template>(sqlQuery, [userId, projectId]);
+
+    if (templates?.length === 0) {
+      return [];
+    }
+
+    return templates;
+  }
+
   public async listCustomized(projectId: string, userId: string) {
     const sqlQuery = `
       SELECT 
@@ -164,10 +248,10 @@ export class TemplateModel extends BaseModel {
       LEFT JOIN template_text pt ON t.id = pt.template_id AND pt.type = 'punchline'
       LEFT JOIN template_text ct ON t.id = ct.template_id AND ct.type = 'cta'
       LEFT JOIN user_templates ut ON t.id = ut.template_id
-      WHERE ut.project_id = ?
-        AND ut.user_id = ?
+      LEFT JOIN project_templates ptm ON t.id = ptm.template_id
+      WHERE ut.user_id = ? 
+        AND ptm.project_id = ? 
         AND t.type = 'Customized'
-        AND t.project_id = ?
     `;
 
     const templates = await this.executeQuery<Template>(sqlQuery, [projectId, userId, projectId]);
@@ -179,11 +263,10 @@ export class TemplateModel extends BaseModel {
     return templates;
   }
 
-  // Create a new template with its texts (headline, punchline, cta)
   public async create(template: Template, projectId: string, userId: string, userRole: string) {
     const sqlQueryInsertTemplate = `
       INSERT INTO templates 
-        (id, name, type, frame_svg, default_primary, default_secondary_color, project_id)
+        (id, name, type, frame_svg, default_primary, default_secondary_color, user_id)
       VALUES 
         (?, ?, ?, ?, ?, ?, ?)
     `;
@@ -200,11 +283,11 @@ export class TemplateModel extends BaseModel {
     const createdTemplate = await this.executeQuery(sqlQueryInsertTemplate, [
       template.id,
       template.name,
-      userRole === "Admin" ? "Default" : "Customized",
+      userRole === "Admin" ? "Branded" : "Customized",
       template.frameSvg,
       template.defaultPrimary,
       template.defaultSecondary,
-      projectId,
+      userId,
     ]);
 
     const { headline, punchline, cta } = template.templateTexts;
@@ -236,29 +319,19 @@ export class TemplateModel extends BaseModel {
 
     await Promise.all(insertPromises);
 
-    if (userRole !== "Admin") {
-      await this.insertUserTemplate(userId, template.id, projectId, false);
-    }
+    const sqlQueryInsertProjectTemplate = `
+      INERT INTO project_templates (id, template_id, project_id)
+      VALUES (?, ?, ?)
+    `;
+
+    const id = randomUUID();
+
+    await this.executeQuery(sqlQueryInsertProjectTemplate, [id, template.id, projectId]);
 
     return createdTemplate;
   }
 
-  public async getFromUserTemplates(projectId: string, templateId: string, userId: string) {
-    const sqlQuery = `
-      SELECT ut.template_id AS id
-      FROM user_templates ut
-      INNER JOIN templates t ON ut.template_id = t.id
-      WHERE ut.template_id = ?
-        AND ut.project_id = ?
-        AND ut.user_id = ?
-    `;
-
-    const templates = await this.executeQuery<Template>(sqlQuery, [templateId, projectId, userId]);
-
-    return templates[0];
-  }
-
-  public async getFromTemplates(templateId: string) {
+  public async getById(templateId: string) {
     const sqlQuery = `
       SELECT * FROM templates WHERE id = ?
     `;
@@ -266,6 +339,26 @@ export class TemplateModel extends BaseModel {
     const templates = await this.executeQuery<Template>(sqlQuery, [templateId]);
 
     return templates[0];
+  }
+
+  public async getByUserId(userId: string) {
+    const sqlQuery = `
+      SELECT id FROM templates WHERE user_id = ?
+    `;
+
+    const templates = await this.executeQuery<Template>(sqlQuery, [userId]);
+
+    return templates[0];
+  }
+
+  public async checkUserTemplate(templateId: string, userId: string) {
+    const sqlQuery = `
+    SELECT template_id AS id FROM user_templates WHERE template_id = ? AND user_id = ?
+  `;
+
+    const images = await this.executeQuery<{ id: string }>(sqlQuery, [templateId, userId]);
+
+    return images[0];
   }
 
   public async update(templateId: string, status: boolean) {
@@ -296,15 +389,15 @@ export class TemplateModel extends BaseModel {
     return { result1, result2 };
   }
 
-  public async insertUserTemplate(userId: string, templateId: string, projectId: string, status: boolean) {
+  public async addUserTemplate(templateId: string, userId: string, status: boolean) {
     const sqlQuery = `
       INSERT INTO user_templates 
-        (user_id, template_id, project_id, is_selected)
+        (user_id, template_id, is_selected)
       VALUES
-        (?, ?, ?, ?) 
+        (?, ?, ?) 
     `;
 
-    const result = await this.executeQuery(sqlQuery, [userId, templateId, projectId, status]);
+    const result = await this.executeQuery(sqlQuery, [userId, templateId, status]);
 
     return result;
   }

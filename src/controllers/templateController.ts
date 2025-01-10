@@ -1,5 +1,6 @@
 import { TemplateModel } from "../models/templateModel";
 import { ExpressHandler } from "../types/apis";
+import { Template } from "../types/entities";
 
 export class TemplateController {
   private templateModel: TemplateModel;
@@ -9,6 +10,7 @@ export class TemplateController {
   }
 
   private handleError(res: any, error: any, statusCode: number = 500): void {
+    console.log(error);
     if (error instanceof Error) {
       return res.status(statusCode).send({ error: error.message });
     } else {
@@ -35,8 +37,14 @@ export class TemplateController {
   listCustomizedTemplates: ExpressHandler = async (req, res) => {
     try {
       const { projectId } = req.params;
+      const { userId, role: userRole } = res.locals;
 
-      const customizedTemplates = await this.templateModel.listCustomized(projectId, res.locals.userId);
+      let customizedTemplates;
+      if (userRole === "Admin") {
+        customizedTemplates = await this.templateModel.listBranded(projectId, userId);
+      } else {
+        customizedTemplates = await this.templateModel.listCustomized(projectId, userId);
+      }
 
       this.handleSuccess(res, { customizedTemplates });
     } catch (error: any) {
@@ -48,8 +56,9 @@ export class TemplateController {
     try {
       const { projectId } = req.params;
       const { template } = req.body;
+      const { userId, role } = res.locals;
 
-      const isCreated = await this.templateModel.create(template, projectId, res.locals.userId, res.locals.role);
+      const isCreated = await this.templateModel.create(template, projectId, userId, role);
 
       this.handleSuccess(res, isCreated);
     } catch (error: any) {
@@ -61,23 +70,16 @@ export class TemplateController {
     try {
       const { projectId } = req.params;
       const { templateId, status } = req.body;
+      const { userId } = res.locals;
 
-      const templateExistsForUser = await this.templateModel.getFromUserTemplates(
-        projectId,
-        templateId,
-        res.locals.userId
-      );
-      const templateExistsInTemplates = await this.templateModel.getFromTemplates(templateId);
-
-      if (templateExistsForUser?.id) {
+      const userTemplate = await this.templateModel.checkUserTemplate(templateId, userId);
+      if (userTemplate?.id) {
         const result = await this.templateModel.update(templateId, status);
-        this.handleSuccess(res, result);
-      } else if (templateExistsInTemplates?.id) {
-        const result = await this.templateModel.insertUserTemplate(res.locals.userId, templateId, projectId, status);
-        this.handleSuccess(res, result);
-      } else {
-        this.handleError(res, { error: "Template not found." });
+        return this.handleSuccess(res, result, 200);
       }
+
+      const result = await this.templateModel.addUserTemplate(templateId, userId, status);
+      return this.handleSuccess(res, result, 200);
     } catch (error: any) {
       this.handleError(res, error);
     }
@@ -87,8 +89,9 @@ export class TemplateController {
     try {
       const { projectId } = req.params;
       const { templateId } = req.body;
+      const { userId } = res.locals;
 
-      const templateExists = await this.templateModel.getFromUserTemplates(projectId, templateId, res.locals.userId);
+      const templateExists = await this.templateModel.getByUserId(userId);
 
       if (!templateExists?.id) {
         this.handleError(res, { error: "Template not found." }, 400);

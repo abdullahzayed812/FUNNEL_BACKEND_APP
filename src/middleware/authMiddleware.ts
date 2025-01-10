@@ -83,7 +83,7 @@ export class AuthMiddleware {
       return res.status(400).send({ error: ERRORS.IMAGE_ID_NOT_SENT });
     }
 
-    const imageExists = await this.imageModel.getFromImages(imageId);
+    const imageExists = await this.imageModel.getById(imageId);
 
     if (!imageExists?.id) {
       return res.status(400).send({ error: ERRORS.IMAGE_NOT_FOUND });

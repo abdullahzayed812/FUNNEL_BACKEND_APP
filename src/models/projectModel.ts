@@ -1,24 +1,16 @@
 import { Pool } from "mysql2/promise";
 import { Project } from "../types/entities";
-import { AppError } from "../configs/error"; // Assuming AppError is in utils
+import { AppError } from "../configs/error";
 import { ERRORS } from "../configs/error";
 import { randomUUID } from "node:crypto";
+import { BaseModel } from "./baseModel";
 
-export class ProjectModel {
-  private pool: Pool;
+export class ProjectModel extends BaseModel {
+  protected pool: Pool;
 
   constructor(pool: Pool) {
+    super(pool);
     this.pool = pool;
-  }
-
-  private async executeQuery<T>(query: string, params: any[] = []): Promise<T[]> {
-    const connection = await this.pool.getConnection();
-    try {
-      const [result] = await connection.query(query, params);
-      return result as T[];
-    } finally {
-      connection.release();
-    }
   }
 
   private async projectExists(projectId: string): Promise<boolean> {
@@ -32,27 +24,17 @@ export class ProjectModel {
 
   public async list(userId: string, userRole: string) {
     const sqlQueryUserProjects = `
-      SELECT 
-        p.id,
-        p.name,
-        p.description,
-        p.website
-        p.type
-      FROM projects p
-      INNER JOIN user_projects up ON up.project_id = p.id
-      INNER JOIN users u ON u.id = up.user_id
-      WHERE u.id = ?
+      SELECT * FROM projects WHERE user_id = ?
     `;
-
     const sqlQueryDefaultProjects = `
-      SELECT id, name, description, website FROM projects WHERE type = 'Default'
+      SELECT * FROM projects WHERE type = 'Default'
     `;
 
     const userProjects = await this.executeQuery<Project>(sqlQueryUserProjects, [userId]);
-    let defaultProjects: Project[] = [];
+    const defaultProjects = await this.executeQuery<Project>(sqlQueryDefaultProjects);
 
-    if (userRole !== "Admin") {
-      defaultProjects = await this.executeQuery<Project>(sqlQueryDefaultProjects);
+    if (userRole === "Admin") {
+      return defaultProjects;
     }
 
     return [...userProjects, ...defaultProjects];
@@ -62,7 +44,7 @@ export class ProjectModel {
     const sqlQuery = `SELECT id FROM projects WHERE id = ?`;
     const result = await this.executeQuery<Project>(sqlQuery, [projectId]);
 
-    return result[0]; // Assuming projectId is unique
+    return result[0];
   }
 
   public async forward(projectId: string, usersIds: string[]) {
@@ -81,49 +63,24 @@ export class ProjectModel {
 
     const values = usersIds.map((userId) => [projectId, userId]);
 
-    const connection = await this.pool.getConnection();
-    try {
-      await connection.query(sqlQuery, [values]);
-    } finally {
-      connection.release();
-    }
+    return this.executeQuery(sqlQuery, values);
   }
 
   public async create(project: Project, userId: string, userRole: string) {
     const { name, description, website } = project;
 
-    const newProject: Project = {
-      id: randomUUID(),
-      name,
-      description,
-      website,
-      type: userRole === "Admin" ? "Default" : "Customized",
-    };
-
     const sqlQueryInsertProject = `
-      INSERT INTO projects (id, name, description, website, type)
+      INSERT INTO projects (id, name, description, website, user_id, type)
       VALUES (?,?,?,?,?)
     `;
 
-    const sqlQueryInsertUserProjects = `
-      INSERT INTO user_projects (project_id, user_id)
-      VALUES (?,?)
-    `;
-
-    try {
-      const isProjectCreated = await this.executeQuery(sqlQueryInsertProject, [
-        newProject.id,
-        newProject.name,
-        newProject.description,
-        newProject.website,
-        newProject.type,
-      ]);
-
-      const isUserProjectsCreated = await this.executeQuery(sqlQueryInsertUserProjects, [newProject.id, userId]);
-
-      return { isProjectCreated, isUserProjectsCreated };
-    } catch (error: any) {
-      return new AppError(error);
-    }
+    return await this.executeQuery(sqlQueryInsertProject, [
+      randomUUID(),
+      name,
+      description,
+      website,
+      userId,
+      userRole === "Admin" ? "Default" : "Customized",
+    ]);
   }
 }

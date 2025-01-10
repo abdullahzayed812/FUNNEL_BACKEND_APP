@@ -1,0 +1,22 @@
+CREATE TABLE IF NOT EXISTS template_text (
+  id              VARCHAR(255) PRIMARY KEY,
+  type            ENUM('headline', 'punchline', 'cta'),
+  text            TEXT NOT NULL,
+  font_size       INT,
+  font_family     VARCHAR(255),
+  font_weight     VARCHAR(25),
+  text_decoration VARCHAR(15),
+  font_style      VARCHAR(255),
+  border_radius   INT,
+  border_width    INT,
+  border_style    VARCHAR(8),
+  border_color    VARCHAR(12),   
+  container_color VARCHAR(12),
+  text_color      VARCHAR(12),
+  language        VARCHAR(2),
+  x_coordinate    DECIMAL(3,2),
+  y_coordinate    DECIMAL(3,2),
+  color           VARCHAR(20),
+  template_id     VARCHAR(255) NOT NULL,
+  FOREIGN KEY (template_id) REFERENCES templates(id) ON DELETE CASCADE
+);

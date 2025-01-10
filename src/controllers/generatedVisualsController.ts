@@ -20,10 +20,11 @@ export class GeneratedVisualsController {
 
   public getGeneratedVisuals: ExpressHandler = async (req, res) => {
     try {
+      const { projectId } = req.params;
       const userId = res.locals.userId;
 
-      const images = await this.generatedVisualsModel.getSelectedImages(userId);
-      const templates = await this.generatedVisualsModel.getSelectedTemplates(userId);
+      const images = await this.generatedVisualsModel.getSelectedImages(userId, projectId);
+      const templates = await this.generatedVisualsModel.getSelectedTemplates(userId, projectId);
 
       this.handleSuccess(res, { generatedContent: { templates, images } });
     } catch (error: any) {

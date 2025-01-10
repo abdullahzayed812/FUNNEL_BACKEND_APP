@@ -19,25 +19,22 @@ export class BrandingController {
     return res.status(statusCode).send(data);
   }
 
-  private validateBranding(branding: any): boolean {
-    return Object.entries(branding).every(([key, value]) => value !== undefined && value !== null && value !== "");
-  }
+  // private validateBranding(branding: any): boolean {
+  //   return Object.entries(branding).every(([key, value]) => value !== undefined && value !== null && value !== "");
+  // }
 
   public getBranding: ExpressHandler = async (req, res) => {
     try {
       const { projectId } = req.params;
-      const userId = res.locals.userId;
+      const { userId } = res.locals;
 
       const userBranding = await this.brandingModel.getUserBranding(userId, projectId);
-      const defaultBranding = await this.brandingModel.getDefaultBranding(projectId);
-
       if (userBranding?.id) {
         return this.handleSuccess(res, { branding: userBranding });
-      } else if (defaultBranding?.id) {
-        return this.handleSuccess(res, { branding: defaultBranding });
       }
 
-      return this.handleSuccess(res, { branding: {} });
+      const defaultBranding = await this.brandingModel.getProjectBranding(projectId);
+      return this.handleSuccess(res, { branding: defaultBranding });
     } catch (error: any) {
       return this.handleError(res, error);
     }
@@ -48,43 +45,42 @@ export class BrandingController {
       const { projectId } = req.params;
       const { branding } = req.body;
       const userId = res.locals.userId;
+      const userRole = res.locals.role;
 
-      if (!this.validateBranding(branding)) {
-        return this.handleError(res, { error: "No valid data received." }, 400);
-      }
+      // if (!this.validateBranding(branding)) {
+      //   return this.handleError(res, { error: "No valid data received." }, 400);
+      // }
 
-      // Admin Logic: Update or Create Default Branding
-      if (res.locals.role === "Admin") {
-        const defaultBranding = await this.brandingModel.getDefaultBranding(projectId);
+      if (userRole === "Admin") {
+        const defaultBranding = await this.brandingModel.getProjectBranding(projectId);
 
         if (defaultBranding?.id) {
-          // Admin can update the default branding
           const updateResult = await this.brandingModel.updateDefaultBranding(branding);
           return this.handleSuccess(res, updateResult);
         } else {
-          // Admin can create a new default branding
           const newBranding: Branding = {
             ...branding,
+            type: "Default",
             id: randomUUID(),
           };
 
-          const result = await this.brandingModel.createDefaultBranding(newBranding, projectId);
+          const result = await this.brandingModel.create(newBranding, projectId, userId);
           return this.handleSuccess(res, result);
         }
       } else {
-        // Agency Logic: Update their own branding (but not overwrite default branding)
-        const userBranding = await this.brandingModel.getUserBranding(res.locals.userId, projectId);
+        const userBranding = await this.brandingModel.getUserBranding(userId, projectId);
 
         if (userBranding?.id) {
           const updateResult = await this.brandingModel.updateUserBranding(branding);
           return this.handleSuccess(res, updateResult);
         } else {
-          // Agency does not have branding, allow them to create it
           const newBranding: Branding = {
             ...branding,
+            type: "Customized",
             id: randomUUID(),
           };
-          const result = await this.brandingModel.createUserBranding(newBranding, userId, projectId);
+
+          const result = await this.brandingModel.create(newBranding, projectId, userId);
           return this.handleSuccess(res, result);
         }
       }

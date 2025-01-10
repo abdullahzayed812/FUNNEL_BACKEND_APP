@@ -2,7 +2,6 @@ import { Pool, RowDataPacket } from "mysql2/promise";
 import { User } from "../types/entities";
 import { BaseModel } from "./baseModel";
 
-// UserModel receives the database pool via dependency injection
 export class UserModel extends BaseModel {
   protected pool: Pool;
 
@@ -11,7 +10,6 @@ export class UserModel extends BaseModel {
     this.pool = pool;
   }
 
-  // Create a new user in the database
   public async createUser(user: User) {
     const sqlQuery = `
     INSERT INTO users (id, email, role, username, password, created_at) 
@@ -64,14 +62,6 @@ export class UserModel extends BaseModel {
     }
 
     return undefined;
-  }
-
-  async updateUser(id: string, userData: Partial<User>): Promise<boolean> {
-    const sqlQuery = "UPDATE users SET username = ?, email = ? WHERE id = ?";
-
-    const result = await this.executeQuery<{ affectedRows: number }>(sqlQuery, [userData.username, userData.email]);
-
-    return result[0].affectedRows > 0;
   }
 
   public async listUsers() {
