@@ -2,6 +2,7 @@ import { randomUUID } from "crypto";
 import { BrandingModel } from "../models/brandingModel";
 import { ExpressHandler } from "../types/apis";
 import { Branding } from "../types/entities";
+import { ResponseHandler } from "../helpers/responseHandler";
 
 export class BrandingController {
   private brandingModel: BrandingModel;
@@ -10,19 +11,6 @@ export class BrandingController {
     this.brandingModel = brandingModel;
   }
 
-  private handleError(res: any, error: any, statusCode: number = 400): void {
-    console.error(error);
-    return res.status(statusCode).send({ error: error.message || "An unexpected error occurred" });
-  }
-
-  private handleSuccess(res: any, data: any, statusCode: number = 200): void {
-    return res.status(statusCode).send(data);
-  }
-
-  // private validateBranding(branding: any): boolean {
-  //   return Object.entries(branding).every(([key, value]) => value !== undefined && value !== null && value !== "");
-  // }
-
   public getBranding: ExpressHandler = async (req, res) => {
     try {
       const { projectId } = req.params;
@@ -30,13 +18,13 @@ export class BrandingController {
 
       const userBranding = await this.brandingModel.getUserBranding(userId, projectId);
       if (userBranding?.id) {
-        return this.handleSuccess(res, { branding: userBranding });
+        return ResponseHandler.handleSuccess(res, { branding: userBranding });
       }
 
       const defaultBranding = await this.brandingModel.getProjectBranding(projectId);
-      return this.handleSuccess(res, { branding: defaultBranding });
+      return ResponseHandler.handleSuccess(res, { branding: defaultBranding });
     } catch (error: any) {
-      return this.handleError(res, error);
+      return ResponseHandler.handleError(res, error.message);
     }
   };
 
@@ -47,16 +35,12 @@ export class BrandingController {
       const userId = res.locals.userId;
       const userRole = res.locals.role;
 
-      // if (!this.validateBranding(branding)) {
-      //   return this.handleError(res, { error: "No valid data received." }, 400);
-      // }
-
       if (userRole === "Admin") {
         const defaultBranding = await this.brandingModel.getProjectBranding(projectId);
 
         if (defaultBranding?.id) {
           const updateResult = await this.brandingModel.updateDefaultBranding(branding);
-          return this.handleSuccess(res, updateResult);
+          return ResponseHandler.handleSuccess(res, updateResult);
         } else {
           const newBranding: Branding = {
             ...branding,
@@ -65,14 +49,14 @@ export class BrandingController {
           };
 
           const result = await this.brandingModel.create(newBranding, projectId, userId);
-          return this.handleSuccess(res, result);
+          return ResponseHandler.handleSuccess(res, result);
         }
       } else {
         const userBranding = await this.brandingModel.getUserBranding(userId, projectId);
 
         if (userBranding?.id) {
           const updateResult = await this.brandingModel.updateUserBranding(branding);
-          return this.handleSuccess(res, updateResult);
+          return ResponseHandler.handleSuccess(res, updateResult);
         } else {
           const newBranding: Branding = {
             ...branding,
@@ -81,11 +65,11 @@ export class BrandingController {
           };
 
           const result = await this.brandingModel.create(newBranding, projectId, userId);
-          return this.handleSuccess(res, result);
+          return ResponseHandler.handleSuccess(res, result);
         }
       }
     } catch (error: any) {
-      this.handleError(res, error);
+      ResponseHandler.handleError(res, error.message);
     }
   };
 }

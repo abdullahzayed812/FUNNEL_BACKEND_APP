@@ -1,6 +1,6 @@
+import { ResponseHandler } from "../helpers/responseHandler";
 import { ProjectModel } from "../models/projectModel";
 import { ExpressHandler } from "../types/apis";
-import { AppError } from "../configs/error";
 
 export class ProjectController {
   private projectModel: ProjectModel;
@@ -9,26 +9,13 @@ export class ProjectController {
     this.projectModel = projectModel;
   }
 
-  private handleError(res: any, error: any, statusCode: number = 500): void {
-    console.log(error.message);
-    if (error instanceof AppError) {
-      res.status(statusCode).send({ error: error.message });
-    } else {
-      res.status(statusCode).send({ error: "Internal Server Error" });
-    }
-  }
-
-  private handleSuccess(res: any, data: any, statusCode: number = 200): void {
-    res.status(statusCode).send(data);
-  }
-
   listProjects: ExpressHandler = async (_, res) => {
     try {
       const projects = await this.projectModel.list(res.locals.userId, res.locals.role);
 
-      this.handleSuccess(res, { projects });
+      ResponseHandler.handleSuccess(res, { projects });
     } catch (error: any) {
-      this.handleError(res, error);
+      ResponseHandler.handleError(res, error.message);
     }
   };
 
@@ -47,9 +34,9 @@ export class ProjectController {
     try {
       const result = await this.projectModel.forward(projectId, usersIds);
 
-      this.handleSuccess(res, { result });
+      ResponseHandler.handleSuccess(res, { result });
     } catch (error: any) {
-      this.handleError(res, error);
+      ResponseHandler.handleError(res, error.message);
     }
   };
 
@@ -61,9 +48,9 @@ export class ProjectController {
 
       console.log(isCreated);
 
-      this.handleSuccess(res, isCreated);
-    } catch (error) {
-      this.handleError(res, error);
+      ResponseHandler.handleSuccess(res, isCreated);
+    } catch (error: any) {
+      ResponseHandler.handleError(res, error.message);
     }
   };
 }

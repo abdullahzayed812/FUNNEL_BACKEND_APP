@@ -1,3 +1,4 @@
+import { ResponseHandler } from "../helpers/responseHandler";
 import { TemplateModel } from "../models/templateModel";
 import { ExpressHandler } from "../types/apis";
 import { Template } from "../types/entities";
@@ -7,19 +8,6 @@ export class TemplateController {
 
   constructor(templateModel: TemplateModel) {
     this.templateModel = templateModel;
-  }
-
-  private handleError(res: any, error: any, statusCode: number = 500): void {
-    console.log(error);
-    if (error instanceof Error) {
-      return res.status(statusCode).send({ error: error.message });
-    } else {
-      return res.status(statusCode).send({ error: "Internal Server Error" });
-    }
-  }
-
-  private handleSuccess(res: any, data: any, statusCode: number = 200): void {
-    return res.status(statusCode).send(data);
   }
 
   listDefaultTemplates: ExpressHandler = async (req, res) => {
@@ -38,9 +26,9 @@ export class TemplateController {
         }
       }
 
-      this.handleSuccess(res, { templates: defaultTemplates });
+      ResponseHandler.handleSuccess(res, { templates: defaultTemplates });
     } catch (error: any) {
-      this.handleError(res, error);
+      ResponseHandler.handleError(res, error.message);
     }
   };
 
@@ -56,9 +44,9 @@ export class TemplateController {
         customizedTemplates = await this.templateModel.listCustomized(projectId, userId);
       }
 
-      this.handleSuccess(res, { customizedTemplates });
+      ResponseHandler.handleSuccess(res, { customizedTemplates });
     } catch (error: any) {
-      this.handleError(res, error);
+      ResponseHandler.handleError(res, error.message);
     }
   };
 
@@ -70,9 +58,9 @@ export class TemplateController {
     try {
       const isCreated = await this.templateModel.create(template, projectId, userId, role);
 
-      this.handleSuccess(res, isCreated);
+      ResponseHandler.handleSuccess(res, isCreated);
     } catch (error: any) {
-      this.handleError(res, error);
+      ResponseHandler.handleError(res, error.message);
     }
   };
 
@@ -85,13 +73,13 @@ export class TemplateController {
       const userTemplate = await this.templateModel.checkUserTemplate(templateId, userId);
       if (userTemplate?.id) {
         const result = await this.templateModel.update(templateId, status);
-        return this.handleSuccess(res, result, 200);
+        return ResponseHandler.handleSuccess(res, result, 200);
       }
 
       const result = await this.templateModel.addUserTemplate(templateId, userId, status);
-      return this.handleSuccess(res, result, 200);
+      return ResponseHandler.handleSuccess(res, result, 200);
     } catch (error: any) {
-      this.handleError(res, error);
+      ResponseHandler.handleError(res, error.message);
     }
   };
 
@@ -104,14 +92,14 @@ export class TemplateController {
       const templateExists = await this.templateModel.getByUserId(userId);
 
       if (!templateExists?.id) {
-        this.handleError(res, { error: "Template not found." }, 400);
+        ResponseHandler.handleError(res, "Template not found.", 400);
       }
 
       const result = await this.templateModel.delete(templateId);
 
-      this.handleSuccess(res, result);
+      ResponseHandler.handleSuccess(res, result);
     } catch (error: any) {
-      this.handleError(res, error);
+      ResponseHandler.handleError(res, error.message);
     }
   };
 }

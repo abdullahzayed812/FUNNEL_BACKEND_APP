@@ -6,6 +6,7 @@ import { signJwt } from "../helpers/authentication";
 import { getSalt } from "../helpers/env";
 import crypto from "crypto";
 import { UserModel } from "../models/userModel";
+import { ResponseHandler } from "../helpers/responseHandler";
 
 export class UserController {
   private userModel: UserModel;
@@ -14,22 +15,26 @@ export class UserController {
     this.userModel = userModel;
   }
 
+  private hashPassword(password: string) {
+    return crypto.pbkdf2Sync(password, getSalt(), 100, 64, "sha512").toString("hex");
+  }
+
   public signUp: ExpressHandler = async (req, res) => {
     try {
       const { email, username, password } = req.body;
 
       if (!email || !username || !password) {
-        return res.status(400).send({ error: ERRORS.USER_DATA_REQUIRED });
+        return ResponseHandler.handleError(res, ERRORS.USER_DATA_REQUIRED, 400);
       }
 
       const usernameExists = await this.userModel.getUserByUsername(username);
       const userEmailExits = await this.userModel.getUserByEmail(email);
 
       if (usernameExists) {
-        return res.status(400).send({ error: ERRORS.DUPLICATE_USERNAME });
+        return ResponseHandler.handleError(res, ERRORS.DUPLICATE_USERNAME, 404);
       }
       if (userEmailExits) {
-        return res.status(400).send({ error: ERRORS.DUPLICATE_EMAIL });
+        return ResponseHandler.handleError(res, ERRORS.DUPLICATE_EMAIL, 404);
       }
 
       const user: User = {
@@ -37,7 +42,7 @@ export class UserController {
         email,
         username,
         role: "Agency",
-        password: this.hashPassword(password),
+        password: password,
         createdAt: formatDate(),
       };
 
@@ -45,12 +50,16 @@ export class UserController {
 
       const jwt = signJwt({ userId: user.id, role: user.role });
 
-      return res.status(201).send({
-        accessToken: jwt,
-        user: { id: user.id, email: user.email, username: user.username, createdAt: user.createdAt },
-      });
+      return ResponseHandler.handleSuccess(
+        res,
+        {
+          accessToken: jwt,
+          user: { id: user.id, email: user.email, username: user.username, createdAt: user.createdAt },
+        },
+        201
+      );
     } catch (error: any) {
-      return res.status(400).send({ error: error.message });
+      return ResponseHandler.handleError(res, error.message);
     }
   };
 
@@ -59,13 +68,13 @@ export class UserController {
       const { email, password } = req.body;
 
       if (!email || !password) {
-        res.status(400).send({ error: ERRORS.USER_DATA_REQUIRED });
+        return ResponseHandler.handleError(res, ERRORS.USER_DATA_REQUIRED, 400);
       }
 
       const userExists = await this.userModel.getUserByEmail(email);
 
       if (!userExists?.id) {
-        res.status(403).send({ error: ERRORS.USER_NOT_FOUND });
+        return ResponseHandler.handleError(res, ERRORS.USER_NOT_FOUND, 403);
       }
 
       // if (userExists?.password !== this.hashPassword(password)) {
@@ -84,7 +93,7 @@ export class UserController {
         accessToken: jwt,
       });
     } catch (error: any) {
-      return res.status(400).send({ error: error.message });
+      return ResponseHandler.handleError(res, error.message);
     }
   };
 
@@ -95,10 +104,10 @@ export class UserController {
       if (userRole === "Admin") {
         const users = await this.userModel.listUsers();
 
-        return res.status(200).send({ users });
+        return ResponseHandler.handleSuccess(res, { users }, 200);
       }
     } catch (error: any) {
-      return res.status(400).send({ error: error.message });
+      return ResponseHandler.handleError(res, error.message);
     }
   };
 
@@ -110,14 +119,10 @@ export class UserController {
       if (userRole === "Admin") {
         const users = await this.userModel.listForwarded(projectId);
 
-        return res.status(200).send({ users });
+        return ResponseHandler.handleSuccess(res, { users }, 200);
       }
     } catch (error: any) {
-      return res.status(400).send({ error: error.message });
+      return ResponseHandler.handleError(res, error.message);
     }
   };
-
-  private hashPassword(password: string) {
-    return crypto.pbkdf2Sync(password, getSalt(), 100, 64, "sha512").toString("hex");
-  }
 }

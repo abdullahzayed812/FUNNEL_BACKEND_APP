@@ -6,6 +6,7 @@ import { ExpressHandler } from "../types/apis";
 import { Image } from "../types/entities";
 import path from "node:path";
 import fs from "node:fs/promises";
+import { ResponseHandler } from "../helpers/responseHandler";
 
 const __filename = new URL(import.meta.url).pathname;
 const __dirname = path.dirname(__filename);
@@ -17,27 +18,15 @@ export class ImageController {
     this.imageModel = imageModel;
   }
 
-  private handleError(res: any, error: any, statusCode: number = 500): void {
-    if (error instanceof Error) {
-      return res.status(statusCode).send({ error: error.message });
-    } else {
-      return res.status(statusCode).send({ error: "Internal Server Error" });
-    }
-  }
-
-  private handleSuccess(res: any, data: any, statusCode: number = 200): void {
-    return res.status(statusCode).send(data);
-  }
-
   public listImages: ExpressHandler = async (req, res) => {
     try {
       const { projectId } = req.params;
 
       const images = await this.imageModel.list(projectId, res.locals.userId);
 
-      this.handleSuccess(res, { images });
+      ResponseHandler.handleSuccess(res, { images });
     } catch (error: any) {
-      this.handleError(res, error);
+      ResponseHandler.handleError(res, error.message);
     }
   };
 
@@ -50,13 +39,13 @@ export class ImageController {
       const userImage = await this.imageModel.checkUserImage(imageId, userId);
       if (userImage?.id) {
         const result = await this.imageModel.update(imageId, status);
-        return this.handleSuccess(res, result, 200);
+        return ResponseHandler.handleSuccess(res, result, 200);
       }
 
       const result = await this.imageModel.addUserImage(imageId, userId, status);
-      return this.handleSuccess(res, result, 200);
+      return ResponseHandler.handleSuccess(res, result, 200);
     } catch (error: any) {
-      this.handleError(res, error);
+      ResponseHandler.handleError(res, error.message);
     }
   };
 
@@ -69,7 +58,7 @@ export class ImageController {
       const userImage = await this.imageModel.getByUserId(imageId, userId);
 
       if (!userImage?.id) {
-        return this.handleError(res, { error: "Image not found" }, 404);
+        return ResponseHandler.handleError(res, "Image not found", 404);
       }
 
       const filePath = path.join(__dirname, "..", userImage.filePath);
@@ -83,12 +72,12 @@ export class ImageController {
 
       try {
         const result = await this.imageModel.delete(imageId);
-        this.handleSuccess(res, result, 200);
+        ResponseHandler.handleSuccess(res, result, 200);
       } catch (error: any) {
-        this.handleError(res, error);
+        ResponseHandler.handleError(res, error.message);
       }
     } catch (error: any) {
-      this.handleError(res, error);
+      ResponseHandler.handleError(res, error.message);
     }
   };
 
@@ -117,9 +106,9 @@ export class ImageController {
 
       try {
         const result = await this.imageModel.create(image, userId, projectId);
-        this.handleSuccess(res, result, 201);
+        ResponseHandler.handleSuccess(res, result, 201);
       } catch (error: any) {
-        this.handleError(res, error);
+        ResponseHandler.handleError(res, error.message);
       }
     });
   };
