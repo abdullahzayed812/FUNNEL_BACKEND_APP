@@ -24,21 +24,31 @@ export class TemplateController {
 
   listDefaultTemplates: ExpressHandler = async (req, res) => {
     const { projectId } = req.params;
+    const { userId, role: userRole, projectType } = res.locals;
 
     try {
-      const templates = await this.templateModel.listDefault(res.locals.userId, projectId);
+      let defaultTemplates;
+      if (userRole === "Admin") {
+        defaultTemplates = await this.templateModel.listDefault(userId, projectId);
+      } else {
+        if (projectType === "Default") {
+          defaultTemplates = await this.templateModel.listBranded(userId, projectId);
+        } else {
+          defaultTemplates = await this.templateModel.listDefault(userId, projectId);
+        }
+      }
 
-      this.handleSuccess(res, { templates });
+      this.handleSuccess(res, { templates: defaultTemplates });
     } catch (error: any) {
       this.handleError(res, error);
     }
   };
 
   listCustomizedTemplates: ExpressHandler = async (req, res) => {
-    try {
-      const { projectId } = req.params;
-      const { userId, role: userRole } = res.locals;
+    const { projectId } = req.params;
+    const { userId, role: userRole } = res.locals;
 
+    try {
       let customizedTemplates;
       if (userRole === "Admin") {
         customizedTemplates = await this.templateModel.listBranded(projectId, userId);
@@ -53,11 +63,11 @@ export class TemplateController {
   };
 
   createTemplate: ExpressHandler = async (req, res) => {
-    try {
-      const { projectId } = req.params;
-      const { template } = req.body;
-      const { userId, role } = res.locals;
+    const { projectId } = req.params;
+    const { template } = req.body;
+    const { userId, role } = res.locals;
 
+    try {
       const isCreated = await this.templateModel.create(template, projectId, userId, role);
 
       this.handleSuccess(res, isCreated);
@@ -86,11 +96,11 @@ export class TemplateController {
   };
 
   deleteTemplate: ExpressHandler = async (req, res) => {
-    try {
-      const { projectId } = req.params;
-      const { templateId } = req.body;
-      const { userId } = res.locals;
+    const { projectId } = req.params;
+    const { templateId } = req.body;
+    const { userId } = res.locals;
 
+    try {
       const templateExists = await this.templateModel.getByUserId(userId);
 
       if (!templateExists?.id) {

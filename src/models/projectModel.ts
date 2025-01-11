@@ -41,7 +41,7 @@ export class ProjectModel extends BaseModel {
   }
 
   public async get(projectId: string): Promise<Project> {
-    const sqlQuery = `SELECT id FROM projects WHERE id = ?`;
+    const sqlQuery = `SELECT id, type FROM projects WHERE id = ?`;
     const result = await this.executeQuery<Project>(sqlQuery, [projectId]);
 
     return result[0];
@@ -71,7 +71,7 @@ export class ProjectModel extends BaseModel {
 
     const sqlQueryInsertProject = `
       INSERT INTO projects (id, name, description, website, user_id, type)
-      VALUES (?,?,?,?,?)
+      VALUES (?,?,?,?,?,?)
     `;
 
     return await this.executeQuery(sqlQueryInsertProject, [

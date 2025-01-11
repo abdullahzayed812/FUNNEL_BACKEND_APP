@@ -73,6 +73,8 @@ export class AuthMiddleware {
       return res.status(400).send({ error: ERRORS.PROJECT_NOT_FOUND });
     }
 
+    res.locals.projectType = projectExists?.type;
+
     next();
   };
 

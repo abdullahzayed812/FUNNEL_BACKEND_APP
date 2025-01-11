@@ -320,7 +320,7 @@ export class TemplateModel extends BaseModel {
     await Promise.all(insertPromises);
 
     const sqlQueryInsertProjectTemplate = `
-      INERT INTO project_templates (id, template_id, project_id)
+      INSERT INTO project_templates (id, template_id, project_id)
       VALUES (?, ?, ?)
     `;
 
