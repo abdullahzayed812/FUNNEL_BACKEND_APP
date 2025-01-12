@@ -2,6 +2,7 @@ import { Response } from "express";
 
 export class ResponseHandler {
   static handleError(res: Response, error: any, statusCode: number = 500): void {
+    console.log(error);
     res.status(statusCode).send({ error: "Internal Server Error: " + error });
   }
 
