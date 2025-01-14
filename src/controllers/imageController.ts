@@ -9,7 +9,7 @@ import fs from "node:fs/promises";
 import { ResponseHandler } from "../helpers/responseHandler";
 
 const __filename = new URL(import.meta.url).pathname;
-const __dirname = path.dirname(__filename);
+const __dirname = path.dirname(decodeURIComponent(__filename)); // Decode the URL for cross-platform compatibility
 
 export class ImageController {
   private imageModel: ImageModel;
@@ -52,7 +52,6 @@ export class ImageController {
   deleteImage: ExpressHandler = async (req, res) => {
     try {
       const { imageId } = req.body;
-      const { projectId } = req.params;
       const { userId } = res.locals;
 
       const userImage = await this.imageModel.getByUserId(imageId, userId);
@@ -61,7 +60,7 @@ export class ImageController {
         return ResponseHandler.handleError(res, "Image not found", 404);
       }
 
-      const filePath = path.join(__dirname, "..", userImage.filePath);
+      const filePath = path.join(__dirname.slice(1), "..", userImage.filePath);
 
       try {
         await fs.unlink(filePath);
@@ -100,7 +99,7 @@ export class ImageController {
 
       const image: Image = {
         id: randomUUID(),
-        filePath: path.join("uploads", file?.filename),
+        filePath: file?.filename,
         imageType: userRole === "Admin" ? "Default" : "Customized",
       };
 

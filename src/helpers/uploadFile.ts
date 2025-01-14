@@ -3,16 +3,27 @@ import path from "path";
 import fs from "fs";
 
 const __filename = new URL(import.meta.url).pathname;
-const __dirname = path.dirname(__filename);
+const __dirname = path.dirname(__filename); // Decode the URL for cross-platform compatibility
+
+// console.log(path.resolve(__dirname));
 
 // Set up storage engine for multer
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    const uploadDir = path.join(__dirname, "..", "uploads");
+    const dir = path.resolve(__dirname, "..", "uploads");
 
+    const uploadDir = dir.slice(3);
     // Check if the uploads directory exists; if not, create it
     if (!fs.existsSync(uploadDir)) {
       fs.mkdirSync(uploadDir, { recursive: true });
+
+      // fs.mkdir(path.join(__dirname, "..", "uploads"), { recursive: true }, (err) => {
+      //   if (err) {
+      //     console.error("Error creating directory:", err);
+      //   } else {
+      //     console.log("Uploads directory created or exists.");
+      //   }
+      // });
     }
 
     cb(null, uploadDir); // Save files in the "uploads" folder

@@ -1,7 +1,6 @@
 import { ResponseHandler } from "../helpers/responseHandler";
 import { TemplateModel } from "../models/templateModel";
 import { ExpressHandler } from "../types/apis";
-import { Template } from "../types/entities";
 
 export class TemplateController {
   private templateModel: TemplateModel;
@@ -11,18 +10,18 @@ export class TemplateController {
   }
 
   listDefaultTemplates: ExpressHandler = async (req, res) => {
-    const { projectId } = req.params;
+    // const { projectId } = req.params;
     const { userId, role: userRole, projectType } = res.locals;
 
     try {
       let defaultTemplates;
       if (userRole === "Admin") {
-        defaultTemplates = await this.templateModel.listDefault(userId, projectId);
+        defaultTemplates = await this.templateModel.listDefault(userId);
       } else {
         if (projectType === "Default") {
-          defaultTemplates = await this.templateModel.listBranded(userId, projectId);
+          defaultTemplates = await this.templateModel.listBranded(userId);
         } else {
-          defaultTemplates = await this.templateModel.listDefault(userId, projectId);
+          defaultTemplates = await this.templateModel.listDefault(userId);
         }
       }
 
@@ -32,6 +31,8 @@ export class TemplateController {
     }
   };
 
+  // listBrandedTemplates: ExpressHandler = async (req, res) => {};
+
   listCustomizedTemplates: ExpressHandler = async (req, res) => {
     const { projectId } = req.params;
     const { userId, role: userRole } = res.locals;
@@ -39,7 +40,7 @@ export class TemplateController {
     try {
       let customizedTemplates;
       if (userRole === "Admin") {
-        customizedTemplates = await this.templateModel.listBranded(projectId, userId);
+        customizedTemplates = await this.templateModel.listBranded(userId);
       } else {
         customizedTemplates = await this.templateModel.listCustomized(projectId, userId);
       }
@@ -64,6 +65,19 @@ export class TemplateController {
     }
   };
 
+  createBulkTemplates: ExpressHandler = async (req, res) => {
+    const { projectId } = req.params;
+    const { templates } = req.body; // Array of templates
+    const { userId, role: userRole } = res.locals;
+
+    try {
+      const result = await this.templateModel.createBulkTemplates(templates, projectId, userId, userRole);
+      ResponseHandler.handleSuccess(res, result);
+    } catch (error: any) {
+      ResponseHandler.handleError(res, error.message);
+    }
+  };
+
   updateTemplateSelection: ExpressHandler = async (req, res) => {
     try {
       const { projectId } = req.params;
@@ -72,7 +86,7 @@ export class TemplateController {
 
       const userTemplate = await this.templateModel.checkUserTemplate(templateId, userId);
       if (userTemplate?.id) {
-        const result = await this.templateModel.update(templateId, status);
+        const result = await this.templateModel.update(templateId, status, userId);
         return ResponseHandler.handleSuccess(res, result, 200);
       }
 
@@ -89,10 +103,10 @@ export class TemplateController {
     const { userId } = res.locals;
 
     try {
-      const templateExists = await this.templateModel.getByUserId(userId);
+      const templateExists = await this.templateModel.getByUserId(userId, projectId);
 
       if (!templateExists?.id) {
-        ResponseHandler.handleError(res, "Template not found.", 400);
+        return ResponseHandler.handleError(res, "Template not found.", 400);
       }
 
       const result = await this.templateModel.delete(templateId);

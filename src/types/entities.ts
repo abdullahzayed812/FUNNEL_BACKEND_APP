@@ -67,6 +67,8 @@ export interface TemplateText {
   borderStyle: "solid" | "dashed" | "dotted" | undefined;
   borderColor: string;
   containerColor: string;
+  textColorBrandingType: "primary" | "secondary" | "additional" | null;
+  containerColorBrandingType: "primary" | "secondary" | "additional" | null;
   color: string;
   language?: string;
 }

@@ -27,6 +27,7 @@ export enum Endpoints {
   deleteImage = "deleteImage",
 
   createTemplate = "createTemplate",
+  createBulkTemplates = "createBulkTemplates",
   listDefaultTemplates = "listDefaultTemplates",
   listCustomizedTemplates = "listCustomizedTemplates",
   updateTemplateSelectionStatus = "updateTemplateSelectionStatus",
@@ -88,10 +89,9 @@ export const ENDPOINT_CONFIGS: { [key in Endpoints]: EndpointConfig } = {
   },
   [Endpoints.deleteImage]: {
     method: "delete",
-    url: "/api/v1/project-images/:projectId",
+    url: "/api/v1/project-images",
     auth: true,
     requireImageId: true,
-    requireProjectId: true,
   },
   [Endpoints.updateImageSelectionStatus]: {
     method: "patch",
@@ -107,11 +107,16 @@ export const ENDPOINT_CONFIGS: { [key in Endpoints]: EndpointConfig } = {
     auth: true,
     requireProjectId: true,
   },
-  [Endpoints.listDefaultTemplates]: {
-    method: "get",
-    url: "/api/v1/project-templates/:projectId",
+  [Endpoints.createBulkTemplates]: {
+    method: "post",
+    url: "/api/v1/create-bulk-templates/:projectId",
     auth: true,
     requireProjectId: true,
+  },
+  [Endpoints.listDefaultTemplates]: {
+    method: "get",
+    url: "/api/v1/project-templates",
+    auth: true,
   },
   [Endpoints.listCustomizedTemplates]: {
     method: "get",

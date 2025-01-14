@@ -24,15 +24,20 @@ import { GeneratedVisualsModel } from "./models/generatedVisualsModle";
 import { GeneratedVisualsController } from "./controllers/generatedVisualsController";
 
 const __filename = new URL(import.meta.url).pathname;
-const __dirname = path.dirname(__filename);
+const __dirname = path.dirname(decodeURIComponent(__filename)); // Decode the URL for cross-platform compatibility
 
 export async function createServer(logRequests: boolean = true) {
   const app = express();
 
+  const staticAssetPath = path.join(__dirname, "uploads").slice(1);
+
+  console.log(staticAssetPath);
+
   app.use(express.json());
   app.use(cors(corsOptions));
   app.use(credentialsMiddleware);
-  app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+  // console.log(__dirname.slice(1));
+  app.use("/uploads", express.static(staticAssetPath));
 
   if (logRequests) {
     app.use(requestLoggerMiddleware);
@@ -80,6 +85,7 @@ export async function createServer(logRequests: boolean = true) {
     [Endpoints.deleteImage]: imageController.deleteImage,
     [Endpoints.listDefaultTemplates]: templateController.listDefaultTemplates,
     [Endpoints.createTemplate]: templateController.createTemplate,
+    [Endpoints.createBulkTemplates]: templateController.createBulkTemplates,
     [Endpoints.listCustomizedTemplates]: templateController.listCustomizedTemplates,
     [Endpoints.updateTemplateSelectionStatus]: templateController.updateTemplateSelection,
     [Endpoints.deleteTemplate]: templateController.deleteTemplate,

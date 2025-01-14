@@ -1,17 +1,12 @@
-import { Pool } from "mysql2/promise";
-import { Image } from "../types/entities";
 import { BaseModel } from "./baseModel";
-
 export class GeneratedVisualsModel extends BaseModel {
-  protected pool: Pool;
-
-  constructor(pool: Pool) {
-    super(pool);
-    this.pool = pool;
-  }
-
-  public async getSelectedImages(userId: string, projectId: string) {
-    const sqlQuery = `
+    pool;
+    constructor(pool) {
+        super(pool);
+        this.pool = pool;
+    }
+    async getSelectedImages(userId, projectId) {
+        const sqlQuery = `
       SELECT 
         id,
         file_path AS url,
@@ -19,17 +14,14 @@ export class GeneratedVisualsModel extends BaseModel {
         is_selected AS isSelected
       FROM images i
       INNER JOIN user_images ui ON i.id = ui.image_id
-      WHERE i.user_id = ? AND i.project_id = ? AND ui.is_selected = TRUE
+      WHERE ui.user_id = ? AND i.project_id = ? AND ui.is_selected = TRUE
     `;
-
-    const images = await this.executeQuery<Image>(sqlQuery, [userId, projectId]);
-
-    return images;
-  }
-
-  // Get selected templates for a specific project and user, including headline, punchline, and CTA texts
-  public async getSelectedTemplates(userId: string, projectId: string) {
-    const sqlQuery = `
+        const images = await this.executeQuery(sqlQuery, [userId, projectId]);
+        return images;
+    }
+    // Get selected templates for a specific project and user, including headline, punchline, and CTA texts
+    async getSelectedTemplates(userId, projectId) {
+        const sqlQuery = `
       SELECT 
         t.id,
         t.name,
@@ -96,12 +88,10 @@ export class GeneratedVisualsModel extends BaseModel {
       LEFT JOIN template_text ht ON t.id = ht.template_id AND ht.type = 'headline'
       LEFT JOIN template_text pt ON t.id = pt.template_id AND pt.type = 'punchline'
       LEFT JOIN template_text ct ON t.id = ct.template_id AND ct.type = 'cta'
-      WHERE u.user_id = ?
+      WHERE ut.user_id = ?
       AND t.project_id = ? AND ut.is_selected = TRUE
     `;
-
-    const templates = await this.executeQuery(sqlQuery, [userId, projectId]);
-
-    return templates;
-  }
+        const templates = await this.executeQuery(sqlQuery, [userId, projectId]);
+        return templates;
+    }
 }
