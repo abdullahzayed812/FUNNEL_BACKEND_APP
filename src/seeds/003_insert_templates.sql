@@ -18,7 +18,7 @@ VALUES
   CURRENT_TIMESTAMP, 'user_1', '1'),
 
   ('template_2', '', 'Default', 
-  "<svg width='1080' height='1080' viewBox='0 0 1080 1080' fill='none' xmlns='http://www.w3.org/2000/svg'><path d='M0 566L1080 338.5V0H0V566Z' hasPrimary='true' fill='#2196f3'/><path d='M616 433L1080 333.5V379.5L616 433Z' fill='#B9512A'/><path d='M607 437L1080 334V536L607 437Z' hasSecondary='true' fill='#EB6E40'/></svg>", 
+  "<svg width='1080' height='1080' viewBox='0 0 1080 1080' fill='none' xmlns='http://www.w3.org/2000/svg'><path d='M0 566L1080 338.5V0H0V566Z' hasPrimary='true' fill='#133272'/><path d='M616 433L1080 333.5V379.5L616 433Z' fill='#B9512A'/><path d='M607 437L1080 334V536L607 437Z' hasSecondary='true' fill='#EB6E40'/></svg>", 
   '#074A76', 
   '#EB6E40', 
   CURRENT_TIMESTAMP, 'user_1', '1'),

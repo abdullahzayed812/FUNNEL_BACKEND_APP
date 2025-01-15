@@ -15,7 +15,7 @@ export class ImageModel extends BaseModel {
       SELECT
         i.id AS id,
         i.file_path AS url,
-        i.image_type AS imageType,
+        i.image_type AS type,
         CASE
           WHEN ui.user_id = ? THEN ui.is_selected
           ELSE FALSE

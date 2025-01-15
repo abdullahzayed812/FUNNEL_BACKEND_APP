@@ -275,7 +275,7 @@ export class TemplateModel extends BaseModel {
         AND t.type = 'Customized'
     `;
 
-    const templates = await this.executeQuery<Template>(sqlQuery, [projectId, userId, projectId]);
+    const templates = await this.executeQuery<Template>(sqlQuery, [userId, userId, projectId]);
 
     if (templates?.length === 0) {
       return [];

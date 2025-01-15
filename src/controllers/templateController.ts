@@ -18,8 +18,10 @@ export class TemplateController {
       if (userRole === "Admin") {
         defaultTemplates = await this.templateModel.listDefault(userId);
       } else {
+        // console.log(projectType);
         if (projectType === "Default") {
           defaultTemplates = await this.templateModel.listBranded(userId);
+          // console.log(defaultTemplates);
         } else {
           defaultTemplates = await this.templateModel.listDefault(userId);
         }

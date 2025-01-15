@@ -19,7 +19,7 @@ export class GeneratedVisualsModel extends BaseModel {
         is_selected AS isSelected
       FROM images i
       INNER JOIN user_images ui ON i.id = ui.image_id
-      WHERE i.user_id = ? AND i.project_id = ? AND ui.is_selected = TRUE
+      WHERE ui.user_id = ? AND i.project_id = ? AND ui.is_selected = TRUE
     `;
 
     const images = await this.executeQuery<Image>(sqlQuery, [userId, projectId]);
@@ -96,7 +96,7 @@ export class GeneratedVisualsModel extends BaseModel {
       LEFT JOIN template_text ht ON t.id = ht.template_id AND ht.type = 'headline'
       LEFT JOIN template_text pt ON t.id = pt.template_id AND pt.type = 'punchline'
       LEFT JOIN template_text ct ON t.id = ct.template_id AND ct.type = 'cta'
-      WHERE u.user_id = ?
+      WHERE ut.user_id = ?
       AND t.project_id = ? AND ut.is_selected = TRUE
     `;
 

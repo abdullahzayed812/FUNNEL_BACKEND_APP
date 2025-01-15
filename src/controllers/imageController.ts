@@ -86,26 +86,30 @@ export class ImageController {
     const userRole = res.locals.role;
     const userId = res.locals.userId;
 
-    upload.single("image")(req, res, async (err) => {
+    upload(req, res, async (err) => {
       if (err) {
         return next(err);
       }
 
-      const file = req.file;
+      const files = req.files as Express.Multer.File[]; // Cast files to the correct type
 
-      if (!file) {
-        return res.status(400).send(ERRORS.NO_FILE_UPLOADED);
+      if (!files || files.length === 0) {
+        return ResponseHandler.handleError(res, ERRORS.NO_FILE_UPLOADED, 400);
       }
 
-      const image: Image = {
-        id: randomUUID(),
-        filePath: file?.filename,
-        imageType: userRole === "Admin" ? "Default" : "Customized",
-      };
-
       try {
-        const result = await this.imageModel.create(image, userId, projectId);
-        ResponseHandler.handleSuccess(res, result, 201);
+        const imageRecords = await Promise.all(
+          files.map(async (file: any) => {
+            const image: Image = {
+              id: randomUUID(),
+              filePath: file.filename,
+              imageType: userRole === "Admin" ? "Default" : "Customized",
+            };
+            return this.imageModel.create(image, userId, projectId);
+          })
+        );
+
+        ResponseHandler.handleSuccess(res, imageRecords, 201);
       } catch (error: any) {
         ResponseHandler.handleError(res, error.message);
       }
