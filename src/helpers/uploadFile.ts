@@ -1,4 +1,4 @@
-import multer from "multer";
+import multer, { FileFilterCallback } from "multer";
 import path from "path";
 import fs from "fs";
 
@@ -25,5 +25,32 @@ const storage = multer.diskStorage({
   },
 });
 
-// Initialize multer with the storage configuration
-export const upload = multer({ storage }).array("images", 5);
+const fileFilter = (req: any, file: Express.Multer.File, cb: any) => {
+  const filetypesImages = /jpeg|jpg|png|gif/;
+  const filetypesVideos = /mp4|mkv|avi|mov|flv|wmv/;
+
+  // Check if file is an image or video
+  if (
+    file.fieldname === "images" &&
+    filetypesImages.test(path.extname(file.originalname).toLowerCase()) &&
+    filetypesImages.test(file.mimetype)
+  ) {
+    return cb(null, true); // Accept image files
+  } else if (
+    file.fieldname === "videos" &&
+    filetypesVideos.test(path.extname(file.originalname).toLowerCase()) &&
+    filetypesVideos.test(file.mimetype)
+  ) {
+    return cb(null, true); // Accept video files
+  } else {
+    return cb(new Error("Only image and video files are allowed!"), false); // Reject invalid files
+  }
+};
+
+export const upload = multer({
+  storage,
+  fileFilter,
+}).fields([
+  { name: "images", maxCount: 5 }, // Max 5 image files
+  { name: "videos", maxCount: 5 }, // Max 5 video files
+]);

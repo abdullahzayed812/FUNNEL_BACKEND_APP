@@ -94,6 +94,12 @@ export interface Image {
   imageType: string;
 }
 
+export interface Video {
+  id: string;
+  filePath: string;
+  imageType: string;
+}
+
 export interface Project {
   id: string;
   name: string;

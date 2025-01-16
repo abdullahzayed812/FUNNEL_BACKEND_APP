@@ -22,6 +22,8 @@ import { TemplateController } from "./controllers/templateController";
 import { BrandingController } from "./controllers/brandingController";
 import { GeneratedVisualsModel } from "./models/generatedVisualsModle";
 import { GeneratedVisualsController } from "./controllers/generatedVisualsController";
+import { VideoModel } from "./models/videoModel";
+import { VideoController } from "./controllers/videoController";
 
 const __filename = new URL(import.meta.url).pathname;
 const __dirname = path.dirname(decodeURIComponent(__filename)); // Decode the URL for cross-platform compatibility
@@ -31,12 +33,9 @@ export async function createServer(logRequests: boolean = true) {
 
   const staticAssetPath = path.join(__dirname, "uploads").slice(1);
 
-  console.log(staticAssetPath);
-
   app.use(express.json());
   app.use(cors(corsOptions));
   app.use(credentialsMiddleware);
-  // console.log(__dirname.slice(1));
   app.use("/uploads", express.static(staticAssetPath));
 
   if (logRequests) {
@@ -54,6 +53,9 @@ export async function createServer(logRequests: boolean = true) {
 
   const imageModel = new ImageModel(pool);
   const imageController = new ImageController(imageModel);
+
+  const videoModel = new VideoModel(pool);
+  const videoController = new VideoController(videoModel);
 
   const templateModel = new TemplateModel(pool);
   const templateController = new TemplateController(templateModel);
@@ -83,6 +85,10 @@ export async function createServer(logRequests: boolean = true) {
     [Endpoints.uploadImage]: imageController.uploadImage,
     [Endpoints.updateImageSelectionStatus]: imageController.updateImageSelection,
     [Endpoints.deleteImage]: imageController.deleteImage,
+    [Endpoints.listVideos]: videoController.listVideos,
+    [Endpoints.uploadVideo]: videoController.uploadVideo,
+    [Endpoints.updateVideoSelectionStatus]: videoController.updateVideoSelection,
+    [Endpoints.deleteVideo]: videoController.deleteVideo,
     [Endpoints.listDefaultTemplates]: templateController.listDefaultTemplates,
     [Endpoints.createTemplate]: templateController.createTemplate,
     [Endpoints.createBulkTemplates]: templateController.createBulkTemplates,

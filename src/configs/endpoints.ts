@@ -26,6 +26,11 @@ export enum Endpoints {
   updateImageSelectionStatus = "updateImageSelectionStatus",
   deleteImage = "deleteImage",
 
+  listVideos = "listVideos",
+  uploadVideo = "uploadVideo",
+  updateVideoSelectionStatus = "updateVideoSelectionStatus",
+  deleteVideo = "deleteVideo",
+
   createTemplate = "createTemplate",
   createBulkTemplates = "createBulkTemplates",
   listDefaultTemplates = "listDefaultTemplates",
@@ -98,7 +103,30 @@ export const ENDPOINT_CONFIGS: { [key in Endpoints]: EndpointConfig } = {
     url: "/api/v1/project-images/:projectId",
     auth: true,
     requireProjectId: true,
-    requireImageId: true,
+  },
+
+  [Endpoints.listVideos]: {
+    method: "get",
+    url: "/api/v1/project-videos/:projectId",
+    auth: true,
+    requireProjectId: true,
+  },
+  [Endpoints.uploadVideo]: {
+    method: "post",
+    url: "/api/v1/upload-video/:projectId",
+    auth: true,
+    requireProjectId: true,
+  },
+  [Endpoints.deleteVideo]: {
+    method: "delete",
+    url: "/api/v1/project-videos",
+    auth: true,
+  },
+  [Endpoints.updateVideoSelectionStatus]: {
+    method: "patch",
+    url: "/api/v1/project-videos/:projectId",
+    auth: true,
+    requireProjectId: true,
   },
 
   [Endpoints.createTemplate]: {
