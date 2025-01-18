@@ -715,6 +715,89 @@ export class TemplateModel extends BaseModel {
     return customizedTemplates;
   }
 
+  /////////////////////////////////////////////////////////////////
+  // Function to create branded templates for admin users
+  private async createBrandedTemplates(userId: string, projectId: string, branding: Branding) {
+    const defaultTemplates = await this.listDefault(userId);
+    if (defaultTemplates?.length === 0) {
+      console.log("No default templates found to create branded templates.");
+      return;
+    }
+
+    const connection = await this.pool.getConnection();
+    await connection.beginTransaction();
+
+    try {
+      const brandedTemplates = this.prepareBrandedTemplates(defaultTemplates, userId, projectId, branding);
+
+      // Insert all branded templates at once
+      const insertTemplateQuery = `
+      INSERT INTO templates (user_id, project_id, name, type, frame_svg)
+      VALUES (?, ?, ?, ?, ?)
+    `;
+      const templateResults = await connection.query(insertTemplateQuery, brandedTemplates);
+
+      const templateIds = templateResults.map((result: any) => result.insertId);
+
+      // Now insert the corresponding template texts (headline, punchline, cta)
+      await this.createTemplateTexts(connection, templateIds, branding);
+
+      // Commit the transaction
+      await connection.commit();
+      console.log("Branded templates and text properties created successfully.");
+    } catch (error) {
+      // Rollback on error
+      await connection.rollback();
+      console.error("Error during branded templates creation:", error.message);
+      throw new AppError("Failed to create branded templates");
+    } finally {
+      connection.release();
+    }
+  }
+
+  // Helper function to prepare branded templates
+  private prepareBrandedTemplates(defaultTemplates: Template[], userId: string, projectId: string, branding: Branding) {
+    const { primaryColor, secondaryColor } = branding;
+    const brandedTemplates: any[] = [];
+
+    for (const defaultTemplate of defaultTemplates) {
+      let svgElements = parseSVG(defaultTemplate.frameSvg);
+
+      // Apply branding to SVG
+      const updatedFrameSvg = this.updateSvgColors(defaultTemplate.frameSvg, primaryColor, secondaryColor);
+
+      // Prepare branded template data
+      brandedTemplates.push([userId, projectId, defaultTemplate.name, "Branded", updatedFrameSvg]);
+    }
+
+    return brandedTemplates;
+  }
+
+  // Helper function to create text properties (headline, punchline, cta)
+  private async createTemplateTexts(connection: any, templateIds: number[], branding: Branding) {
+    const { primaryColor, secondaryColor, additionalColor } = branding;
+
+    const textData = templateIds
+      .map((templateId) => {
+        // Create text for headline, punchline, and cta
+        return [
+          [templateId, "headline", "Default Headline", primaryColor, additionalColor],
+          [templateId, "punchline", "Default Punchline", secondaryColor, additionalColor],
+          [templateId, "cta", "Default CTA", primaryColor, additionalColor],
+        ];
+      })
+      .flat();
+
+    // Insert text for each template (headline, punchline, cta)
+    const insertTextQuery = `
+    INSERT INTO template_text (template_id, type, text, color, container_color)
+    VALUES (?, ?, ?, ?, ?)
+  `;
+    await connection.query(insertTextQuery, textData);
+  }
+
+  ////////////////////////////////////////////////////////////////////////////////////
+
   public async delete(templateId: string) {
     const sqlQuery = `
       DELETE FROM templates
