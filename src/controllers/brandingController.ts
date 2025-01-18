@@ -3,13 +3,10 @@ import { BrandingModel } from "../models/brandingModel";
 import { ExpressHandler } from "../types/apis";
 import { Branding } from "../types/entities";
 import { ResponseHandler } from "../helpers/responseHandler";
+import { TemplateModel } from "../models/templateModel";
 
 export class BrandingController {
-  private brandingModel: BrandingModel;
-
-  constructor(brandingModel: BrandingModel) {
-    this.brandingModel = brandingModel;
-  }
+  constructor(private brandingModel: BrandingModel, private templateModel: TemplateModel) {}
 
   public getBranding: ExpressHandler = async (req, res) => {
     try {
@@ -40,6 +37,10 @@ export class BrandingController {
 
         if (defaultBranding?.id) {
           const updateResult = await this.brandingModel.updateDefaultBranding(branding);
+
+          // TODO: Update user templates with changed branding.
+          await this.templateModel.updateTemplatesWithBranding(userId, projectId, branding, userRole);
+
           return ResponseHandler.handleSuccess(res, updateResult);
         } else {
           const newBranding: Branding = {
@@ -49,6 +50,10 @@ export class BrandingController {
           };
 
           const result = await this.brandingModel.create(newBranding, projectId, userId);
+
+          // TODO: Update user templates with changed branding.
+          await this.templateModel.updateTemplatesWithBranding(userId, projectId, branding, userRole);
+
           return ResponseHandler.handleSuccess(res, result);
         }
       } else {
@@ -56,6 +61,11 @@ export class BrandingController {
 
         if (userBranding?.id) {
           const updateResult = await this.brandingModel.updateUserBranding(branding);
+
+          // TODO: Update user templates with changed branding.
+
+          await this.templateModel.updateTemplatesWithBranding(userId, projectId, branding, userRole);
+
           return ResponseHandler.handleSuccess(res, updateResult);
         } else {
           const newBranding: Branding = {
@@ -65,6 +75,10 @@ export class BrandingController {
           };
 
           const result = await this.brandingModel.create(newBranding, projectId, userId);
+
+          // TODO: Update user templates with changed branding.
+          await this.templateModel.updateTemplatesWithBranding(userId, projectId, branding, userRole);
+
           return ResponseHandler.handleSuccess(res, result);
         }
       }

@@ -1,8 +1,12 @@
 import { Pool } from "mysql2/promise";
-import { Template, TemplateText } from "../types/entities";
+import { Branding, Template, TemplateText } from "../types/entities";
 import { BaseModel } from "./baseModel";
 import { randomUUID } from "crypto";
 import { AppError } from "../configs/error";
+import { parseSVG } from "../helpers/svg/parseSVG";
+import { collectSvgSegmentsIdsContainsPrimaryProp } from "../helpers/svg/collectShapesIds";
+import { updateShapeColorById } from "../helpers/svg/updateShapeColorById";
+import { serializeSVG } from "../helpers/svg/serializeSVG";
 
 export class TemplateModel extends BaseModel {
   protected pool: Pool;
@@ -366,6 +370,87 @@ export class TemplateModel extends BaseModel {
     return templates[0];
   }
 
+  private async getUserTemplates(userId: string, projectId: string) {
+    const sqlQuery = `
+      SELECT 
+      t.id,
+      t.name,
+      t.type,
+      t.frame_svg AS frameSvg,
+      t.default_primary AS defaultPrimary,
+      t.default_secondary_color AS defaultSecondary,
+      t.created_at AS createdAt,
+      JSON_OBJECT(
+        'headline', JSON_OBJECT(
+          'text', ht.text,
+          'color', ht.color,
+          'containerColor', ht.container_color,
+          'fontSize', ht.font_size,
+          'fontWeight', ht.font_weight,
+          'fontFamily', ht.font_family,
+          'fontStyle', ht.font_style,
+          'textDecoration', ht.text_decoration,
+          'borderRadius', ht.border_radius,
+          'borderWidth', ht.border_width,
+          'borderStyle', ht.border_style,
+          'borderColor', ht.border_color,
+          'translateX', ht.x_coordinate,
+          'translateY', ht.y_coordinate,
+          'language', ht.language,
+          'textColorBrandingType', ht.text_color_branding_type,
+          'containerColorBrandingType', ht.container_color_branding_type
+        ),
+        'punchline', JSON_OBJECT(
+          'text', pt.text,
+          'color', pt.color,
+          'containerColor', pt.container_color,
+          'fontSize', pt.font_size,
+          'fontWeight', pt.font_weight,
+          'fontFamily', pt.font_family,
+          'fontStyle', pt.font_style,
+          'textDecoration', pt.text_decoration,
+          'borderRadius', pt.border_radius,
+          'borderWidth', pt.border_width,
+          'borderStyle', pt.border_style,
+          'borderColor', pt.border_color,
+          'translateX', pt.x_coordinate,
+          'translateY', pt.y_coordinate,
+          'language', pt.language,
+          'textColorBrandingType', pt.text_color_branding_type,
+          'containerColorBrandingType', pt.container_color_branding_type
+        ),
+        'cta', JSON_OBJECT(
+          'text', ct.text,
+          'color', ct.color,
+          'containerColor', ct.container_color,
+          'fontSize', ct.font_size,
+          'fontWeight', ct.font_weight,
+          'fontFamily', ct.font_family,
+          'fontStyle', ct.font_style,
+          'textDecoration', ct.text_decoration,
+          'borderRadius', ct.border_radius,
+          'borderWidth', ct.border_width,
+          'borderStyle', ct.border_style,
+          'borderColor', ct.border_color,
+          'translateX', ct.x_coordinate,
+          'translateY', ct.y_coordinate,
+          'language', ct.language,
+          'textColorBrandingType', ct.text_color_branding_type,
+          'containerColorBrandingType', ct.container_color_branding_type
+        )
+      ) AS templateTexts
+      FROM templates t
+      LEFT JOIN template_text ht ON t.id = ht.template_id AND ht.type = 'headline'
+      LEFT JOIN template_text pt ON t.id = pt.template_id AND pt.type = 'punchline'
+      LEFT JOIN template_text ct ON t.id = ct.template_id AND ct.type = 'cta'
+      WHERE user_id = ? AND project_id = ?
+    `;
+
+    const templates = await this.executeQuery<Template>(sqlQuery, [userId, projectId]);
+
+    return templates;
+  }
+
   public async checkUserTemplate(templateId: string, userId: string) {
     const sqlQuery = `
     SELECT template_id AS id FROM user_templates WHERE template_id = ? AND user_id = ?
@@ -386,6 +471,248 @@ export class TemplateModel extends BaseModel {
     const result = await this.executeQuery(sqlQueryUpdateUserTemplate, [status, templateId, userId]);
 
     return result;
+  }
+
+  public async updateTemplatesWithBranding(userId: string, projectId: string, branding: Branding, userRole: string) {
+    try {
+      const templates = await this.getUserTemplates(userId, projectId);
+
+      const { primaryColor, secondaryColor, additionalColor } = branding;
+
+      if (templates?.length > 0) {
+        await this.updateExistingTemplates(userId, templates, primaryColor, secondaryColor, additionalColor);
+        return { message: "Templates updated successfully." };
+      } else {
+        // if (userRole === "Admin") {
+        //   await this.createBrandedTemplates(userId, projectId, branding);
+        //   return { message: "Customized templates created successfully." };
+        // }
+        await this.createCustomizedTemplates(userId, projectId, branding);
+        return { message: "Customized templates created successfully." };
+      }
+    } catch (error: any) {
+      console.error("Error updating templates with branding:", error.message);
+      throw new AppError(error.message);
+    }
+  }
+
+  private async updateExistingTemplates(
+    userId: string,
+    templates: Template[],
+    primaryColor: string,
+    secondaryColor: string,
+    additionalColor: string
+  ) {
+    const connection = await this.pool.getConnection();
+    await connection.beginTransaction();
+
+    try {
+      const updatedTemplates: string[][] = [];
+      const updatedTextFields: string[][] = [];
+
+      // Process each template for updating frame SVG and text fields
+      for (const template of templates) {
+        // Update SVG colors and text fields
+        const updatedFrameSvg = this.updateSvgColors(template.frameSvg, primaryColor, secondaryColor);
+        updatedTemplates.push([updatedFrameSvg, userId, template.id]);
+
+        // Process text fields and prepare update data
+        this.updateTemplateTextFields(
+          template.templateTexts,
+          primaryColor,
+          secondaryColor,
+          additionalColor,
+          updatedTextFields
+        );
+      }
+
+      // Execute bulk updates for templates and text fields
+      await this.bulkUpdateTemplates(updatedTemplates, connection);
+      await this.bulkUpdateTemplateText(updatedTextFields, connection);
+
+      // Commit the transaction
+      await connection.commit();
+      console.log("Bulk templates and text fields updated successfully.");
+    } catch (error: any) {
+      // Rollback on error
+      await connection.rollback();
+      console.error("Error during bulk update:", error.message);
+      throw new AppError("Bulk update failed");
+    } finally {
+      connection.release();
+    }
+  }
+
+  private updateSvgColors(frameSvg: string, primaryColor: string, secondaryColor: string): string {
+    let svgElements = parseSVG(frameSvg);
+
+    // Collect shape IDs based on branding
+    const primaryIds = collectSvgSegmentsIdsContainsPrimaryProp(svgElements, "hasPrimary");
+    const secondaryIds = collectSvgSegmentsIdsContainsPrimaryProp(svgElements, "hasSecondary");
+
+    // Update SVG colors with branding
+    if (primaryColor) {
+      primaryIds?.forEach((id) => {
+        svgElements = updateShapeColorById(svgElements, id, true, primaryColor);
+      });
+    }
+
+    if (secondaryColor) {
+      secondaryIds?.forEach((id) => {
+        svgElements = updateShapeColorById(svgElements, id, true, secondaryColor);
+      });
+    }
+
+    return serializeSVG(svgElements);
+  }
+
+  private updateTemplateTextFields(
+    templateTexts: Record<string, any>,
+    primaryColor: string,
+    secondaryColor: string,
+    additionalColor: string,
+    updatedTextFields: string[][]
+  ) {
+    Object.entries(templateTexts).forEach(([textType, textProps]) => {
+      const updatedText = { ...textProps };
+
+      // Update text color based on branding type
+      const textBrandingType = updatedText.textColorBrandingType;
+      const defaultTextColor = updatedText.color;
+
+      const containerBrandingType = updatedText.containerColorBrandingType;
+      const defaultContainerColor = updatedText.containerColor;
+
+      updatedText.color = this.getTextColorBasedOnBranding(
+        textBrandingType,
+        defaultTextColor,
+        primaryColor,
+        secondaryColor,
+        additionalColor
+      );
+      updatedText.containerColor = this.getTextColorBasedOnBranding(
+        containerBrandingType,
+        defaultContainerColor,
+        primaryColor,
+        secondaryColor,
+        additionalColor
+      );
+
+      // Add updated text field for bulk update
+      updatedTextFields.push([updatedText.color, updatedText.containerColor, updatedText.id]);
+    });
+  }
+
+  private getTextColorBasedOnBranding(
+    brandingType: string,
+    defaultColor: string,
+    primaryColor: string,
+    secondaryColor: string,
+    additionalColor: string
+  ): string {
+    switch (brandingType) {
+      case "primary":
+        return primaryColor;
+      case "secondary":
+        return secondaryColor;
+      case "additional":
+        return additionalColor;
+      default:
+        return defaultColor;
+    }
+  }
+
+  private async bulkUpdateTemplates(updatedTemplates: string[][], connection: any) {
+    const query = `
+    UPDATE templates
+    SET frame_svg = ?
+    WHERE user_id = ? AND id = ?
+  `;
+    for (const updatedTemplate of updatedTemplates) {
+      await connection.query(query, updatedTemplate);
+    }
+  }
+
+  private async bulkUpdateTemplateText(updatedTextFields: string[][], connection: any) {
+    const query = `
+    UPDATE template_text
+    SET color = ?, container_color = ?
+    WHERE id = ?
+  `;
+    for (const updatedTextField of updatedTextFields) {
+      await connection.query(query, updatedTextField);
+    }
+  }
+
+  private async createCustomizedTemplates(userId: string, projectId: string, branding: Branding) {
+    const defaultTemplates = await this.listDefault(userId);
+    if (defaultTemplates?.length === 0) {
+      console.log("No default templates found to create customized templates.");
+      return;
+    }
+
+    const connection = await this.pool.getConnection();
+    await connection.beginTransaction();
+
+    try {
+      const customizedTemplates: Template[] = this.prepareCustomizedTemplates(
+        defaultTemplates,
+        userId,
+        projectId,
+        branding
+      );
+
+      const insertTemplateQuery = `
+        INSERT INTO templates 
+          (id, name, type, frame_svg, default_primary, default_secondary_color, project_id, user_id)
+        VALUES 
+          (?, ?, ?, ?, ?, ?, ?, ?)
+      `;
+      await connection.query(insertTemplateQuery, customizedTemplates);
+
+      // Commit the transaction
+      await connection.commit();
+      console.log("Customized templates created successfully.");
+    } catch (error: any) {
+      // Rollback on error
+      await connection.rollback();
+      console.error("Error during customized templates creation:", error.message);
+      throw new AppError("Failed to create customized templates");
+    } finally {
+      connection.release();
+    }
+  }
+
+  // Helper function to prepare customized templates with branding applied
+  private prepareCustomizedTemplates(
+    defaultTemplates: Template[],
+    userId: string,
+    projectId: string,
+    branding: Branding
+  ) {
+    const { primaryColor, secondaryColor } = branding;
+    const customizedTemplates: any[] = [];
+
+    for (const defaultTemplate of defaultTemplates) {
+      // Apply branding to SVG
+      const updatedFrameSvg = this.updateSvgColors(defaultTemplate.frameSvg, primaryColor, secondaryColor);
+
+      const { id, name, defaultPrimary, defaultSecondary } = defaultTemplate;
+
+      // Prepare customized template data
+      customizedTemplates.push([
+        id,
+        name,
+        "Customized",
+        updatedFrameSvg,
+        defaultPrimary,
+        defaultSecondary,
+        projectId,
+        userId,
+      ]);
+    }
+
+    return customizedTemplates;
   }
 
   public async delete(templateId: string) {

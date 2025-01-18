@@ -61,7 +61,7 @@ export async function createServer(logRequests: boolean = true) {
   const templateController = new TemplateController(templateModel);
 
   const brandingModel = new BrandingModel(pool);
-  const brandingController = new BrandingController(brandingModel);
+  const brandingController = new BrandingController(brandingModel, templateModel);
 
   const authMiddleware = new AuthMiddleware(userModel, projectModel, imageModel);
 
