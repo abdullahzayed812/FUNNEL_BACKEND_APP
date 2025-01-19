@@ -91,7 +91,6 @@ export async function createServer(logRequests: boolean = true) {
     [Endpoints.deleteVideo]: videoController.deleteVideo,
     [Endpoints.listDefaultTemplates]: templateController.listDefaultTemplates,
     [Endpoints.createTemplate]: templateController.createTemplate,
-    [Endpoints.createBulkTemplates]: templateController.createBulkTemplates,
     [Endpoints.listCustomizedTemplates]: templateController.listCustomizedTemplates,
     [Endpoints.updateTemplateSelectionStatus]: templateController.updateTemplateSelection,
     [Endpoints.deleteTemplate]: templateController.deleteTemplate,

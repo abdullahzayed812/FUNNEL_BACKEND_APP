@@ -58,19 +58,6 @@ export class TemplateController {
     }
   };
 
-  createBulkTemplates: ExpressHandler = async (req, res) => {
-    const { projectId } = req.params;
-    const { templates } = req.body; // Array of templates
-    const { userId, role: userRole } = res.locals;
-
-    try {
-      const result = await this.templateModel.createBulkTemplates(templates, projectId, userId, userRole);
-      ResponseHandler.handleSuccess(res, result);
-    } catch (error: any) {
-      ResponseHandler.handleError(res, error.message);
-    }
-  };
-
   updateTemplateSelection: ExpressHandler = async (req, res) => {
     try {
       const { projectId } = req.params;

@@ -32,7 +32,6 @@ export enum Endpoints {
   deleteVideo = "deleteVideo",
 
   createTemplate = "createTemplate",
-  createBulkTemplates = "createBulkTemplates",
   listDefaultTemplates = "listDefaultTemplates",
   listCustomizedTemplates = "listCustomizedTemplates",
   updateTemplateSelectionStatus = "updateTemplateSelectionStatus",
@@ -132,12 +131,6 @@ export const ENDPOINT_CONFIGS: { [key in Endpoints]: EndpointConfig } = {
   [Endpoints.createTemplate]: {
     method: "post",
     url: "/api/v1/project-templates/:projectId",
-    auth: true,
-    requireProjectId: true,
-  },
-  [Endpoints.createBulkTemplates]: {
-    method: "post",
-    url: "/api/v1/create-bulk-templates/:projectId",
     auth: true,
     requireProjectId: true,
   },
