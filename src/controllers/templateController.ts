@@ -3,14 +3,9 @@ import { TemplateModel } from "../models/templateModel";
 import { ExpressHandler } from "../types/apis";
 
 export class TemplateController {
-  private templateModel: TemplateModel;
-
-  constructor(templateModel: TemplateModel) {
-    this.templateModel = templateModel;
-  }
+  constructor(private templateModel: TemplateModel) {}
 
   listDefaultTemplates: ExpressHandler = async (req, res) => {
-    // const { projectId } = req.params;
     const { userId, role: userRole, projectType } = res.locals;
 
     try {
@@ -18,10 +13,8 @@ export class TemplateController {
       if (userRole === "Admin") {
         defaultTemplates = await this.templateModel.listDefault(userId);
       } else {
-        // console.log(projectType);
         if (projectType === "Default") {
           defaultTemplates = await this.templateModel.listBranded(userId);
-          // console.log(defaultTemplates);
         } else {
           defaultTemplates = await this.templateModel.listDefault(userId);
         }
@@ -32,8 +25,6 @@ export class TemplateController {
       ResponseHandler.handleError(res, error.message);
     }
   };
-
-  // listBrandedTemplates: ExpressHandler = async (req, res) => {};
 
   listCustomizedTemplates: ExpressHandler = async (req, res) => {
     const { projectId } = req.params;

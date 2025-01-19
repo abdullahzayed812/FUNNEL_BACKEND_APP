@@ -1,8 +1,9 @@
 
-  -- Inserting first set of template texts (template_1)
+
 INSERT INTO template_text 
 (id, type, font_size, font_family, font_weight, text_decoration, font_style, border_radius, border_width, border_style, border_color, container_color, language, x_coordinate, y_coordinate, color, template_id, text, text_color_branding_type, container_color_branding_type) 
 VALUES
+  -- Inserting first set of template texts (template_1)
   ('1', 'headline', 55, '', 'bold', 'none', 'normal', 0, 0, 'solid', 'transparent', 'transparent', 'en', 0.1, 0.1, '#831843', 'template_1', 'Heart of downtown', NULL, NULL),
   
   ('2', 'punchline', 70, '', 'bold', 'none', 'normal', 0, 0, 'solid', 'transparent', 'transparent', 'en', 0.04, 0.2, '#FFFFFF', 'template_1', 'WALK TO EVERYTHING', NULL, NULL),
@@ -23,6 +24,7 @@ VALUES
   
   ('9', 'cta', 36, 'RobotoCondensed-Black', 'bold', 'none', 'normal', 10, 0, 'solid', 'transparent', '#EB6E40', 'en', 0.73, 0.82, '#FFFFFF', 'template_3', 'Book Now', 'primary', NULL),
 
+-- Inserting text data fro (template_4)
   ('10', 'headline', 48, 'the-bold-font', 'bold', 'none', 'normal', 0, 0, 'solid', 'transparent', 'transparent', 'en', 0.08, 0.63, '#ffffff', 'template_4', 'INCOME KNOCKS!', NULL, NULL),
 
   ('11', 'punchline', 96, 'Caveat-Bold', 'bold', 'none', 'normal', 0, 0, 'solid', 'transparent', 'transparent', 'en', 0.18, 0.71, '#ffffff', 'template_4', 'Invest in your future', NULL, NULL),

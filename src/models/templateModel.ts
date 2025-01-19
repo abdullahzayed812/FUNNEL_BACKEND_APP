@@ -1,4 +1,4 @@
-import { Pool } from "mysql2/promise";
+import { OkPacket, Pool, PoolConnection } from "mysql2/promise";
 import { Branding, Template, TemplateText } from "../types/entities";
 import { BaseModel } from "./baseModel";
 import { randomUUID } from "crypto";
@@ -9,11 +9,8 @@ import { updateShapeColorById } from "../helpers/svg/updateShapeColorById";
 import { serializeSVG } from "../helpers/svg/serializeSVG";
 
 export class TemplateModel extends BaseModel {
-  protected pool: Pool;
-
-  constructor(pool: Pool) {
+  constructor(protected pool: Pool) {
     super(pool);
-    this.pool = pool;
   }
 
   public async listDefault(userId: string) {
@@ -443,7 +440,9 @@ export class TemplateModel extends BaseModel {
       LEFT JOIN template_text ht ON t.id = ht.template_id AND ht.type = 'headline'
       LEFT JOIN template_text pt ON t.id = pt.template_id AND pt.type = 'punchline'
       LEFT JOIN template_text ct ON t.id = ct.template_id AND ct.type = 'cta'
-      WHERE user_id = ? AND project_id = ?
+      WHERE user_id = ?
+        AND project_id = ?
+        AND t.type != 'Default'
     `;
 
     const templates = await this.executeQuery<Template>(sqlQuery, [userId, projectId]);
@@ -483,10 +482,10 @@ export class TemplateModel extends BaseModel {
         await this.updateExistingTemplates(userId, templates, primaryColor, secondaryColor, additionalColor);
         return { message: "Templates updated successfully." };
       } else {
-        // if (userRole === "Admin") {
-        //   await this.createBrandedTemplates(userId, projectId, branding);
-        //   return { message: "Customized templates created successfully." };
-        // }
+        if (userRole === "Admin") {
+          await this.createBrandedTemplates(userId, projectId, branding);
+          return { message: "Customized templates created successfully." };
+        }
         await this.createCustomizedTemplates(userId, projectId, branding);
         return { message: "Customized templates created successfully." };
       }
@@ -604,7 +603,7 @@ export class TemplateModel extends BaseModel {
   }
 
   private getTextColorBasedOnBranding(
-    brandingType: string,
+    brandingType: "primary" | "secondary" | "additional",
     defaultColor: string,
     primaryColor: string,
     secondaryColor: string,
@@ -646,6 +645,7 @@ export class TemplateModel extends BaseModel {
 
   private async createCustomizedTemplates(userId: string, projectId: string, branding: Branding) {
     const defaultTemplates = await this.listDefault(userId);
+
     if (defaultTemplates?.length === 0) {
       console.log("No default templates found to create customized templates.");
       return;
@@ -655,12 +655,8 @@ export class TemplateModel extends BaseModel {
     await connection.beginTransaction();
 
     try {
-      const customizedTemplates: Template[] = this.prepareCustomizedTemplates(
-        defaultTemplates,
-        userId,
-        projectId,
-        branding
-      );
+      const customizedTemplates = this.prepareTemplates(defaultTemplates, userId, projectId, branding, "Customized");
+      const customizedTemplatesIds = customizedTemplates.map((t) => t[0]);
 
       const insertTemplateQuery = `
         INSERT INTO templates 
@@ -668,9 +664,13 @@ export class TemplateModel extends BaseModel {
         VALUES 
           (?, ?, ?, ?, ?, ?, ?, ?)
       `;
-      await connection.query(insertTemplateQuery, customizedTemplates);
 
-      // Commit the transaction
+      for (const customizedTemplate of customizedTemplates) {
+        await connection.query(insertTemplateQuery, customizedTemplate);
+      }
+
+      await this.createTemplateTexts(connection, defaultTemplates, branding, customizedTemplatesIds);
+
       await connection.commit();
       console.log("Customized templates created successfully.");
     } catch (error: any) {
@@ -682,43 +682,26 @@ export class TemplateModel extends BaseModel {
       connection.release();
     }
   }
-
-  // Helper function to prepare customized templates with branding applied
-  private prepareCustomizedTemplates(
+  private prepareTemplates(
     defaultTemplates: Template[],
     userId: string,
     projectId: string,
-    branding: Branding
+    branding: Branding,
+    type: "Customized" | "Branded"
   ) {
     const { primaryColor, secondaryColor } = branding;
-    const customizedTemplates: any[] = [];
 
-    for (const defaultTemplate of defaultTemplates) {
-      // Apply branding to SVG
+    return defaultTemplates.map((defaultTemplate) => {
       const updatedFrameSvg = this.updateSvgColors(defaultTemplate.frameSvg, primaryColor, secondaryColor);
+      const { name, defaultPrimary, defaultSecondary } = defaultTemplate;
 
-      const { id, name, defaultPrimary, defaultSecondary } = defaultTemplate;
-
-      // Prepare customized template data
-      customizedTemplates.push([
-        id,
-        name,
-        "Customized",
-        updatedFrameSvg,
-        defaultPrimary,
-        defaultSecondary,
-        projectId,
-        userId,
-      ]);
-    }
-
-    return customizedTemplates;
+      return [randomUUID(), name, type, updatedFrameSvg, defaultPrimary, defaultSecondary, projectId, userId];
+    });
   }
 
-  /////////////////////////////////////////////////////////////////
-  // Function to create branded templates for admin users
   private async createBrandedTemplates(userId: string, projectId: string, branding: Branding) {
     const defaultTemplates = await this.listDefault(userId);
+
     if (defaultTemplates?.length === 0) {
       console.log("No default templates found to create branded templates.");
       return;
@@ -728,24 +711,27 @@ export class TemplateModel extends BaseModel {
     await connection.beginTransaction();
 
     try {
-      const brandedTemplates = this.prepareBrandedTemplates(defaultTemplates, userId, projectId, branding);
+      const brandedTemplates = this.prepareTemplates(defaultTemplates, userId, projectId, branding, "Branded");
+      const brandedTemplatesIds = brandedTemplates.map((b) => b[0]);
 
-      // Insert all branded templates at once
+      console.log(brandedTemplatesIds);
+
       const insertTemplateQuery = `
-      INSERT INTO templates (user_id, project_id, name, type, frame_svg)
-      VALUES (?, ?, ?, ?, ?)
-    `;
-      const templateResults = await connection.query(insertTemplateQuery, brandedTemplates);
+        INSERT INTO templates 
+          (id, name, type, frame_svg, default_primary, default_secondary_color, project_id, user_id)
+        VALUES 
+          (?, ?, ?, ?, ?, ?, ?, ?)
+      `;
 
-      const templateIds = templateResults.map((result: any) => result.insertId);
+      for (const brandedTemplate of brandedTemplates) {
+        await connection.query(insertTemplateQuery, brandedTemplate);
+      }
 
-      // Now insert the corresponding template texts (headline, punchline, cta)
-      await this.createTemplateTexts(connection, templateIds, branding);
+      await this.createTemplateTexts(connection, defaultTemplates, branding, brandedTemplatesIds);
 
-      // Commit the transaction
       await connection.commit();
       console.log("Branded templates and text properties created successfully.");
-    } catch (error) {
+    } catch (error: any) {
       // Rollback on error
       await connection.rollback();
       console.error("Error during branded templates creation:", error.message);
@@ -755,48 +741,79 @@ export class TemplateModel extends BaseModel {
     }
   }
 
-  // Helper function to prepare branded templates
-  private prepareBrandedTemplates(defaultTemplates: Template[], userId: string, projectId: string, branding: Branding) {
-    const { primaryColor, secondaryColor } = branding;
-    const brandedTemplates: any[] = [];
-
-    for (const defaultTemplate of defaultTemplates) {
-      let svgElements = parseSVG(defaultTemplate.frameSvg);
-
-      // Apply branding to SVG
-      const updatedFrameSvg = this.updateSvgColors(defaultTemplate.frameSvg, primaryColor, secondaryColor);
-
-      // Prepare branded template data
-      brandedTemplates.push([userId, projectId, defaultTemplate.name, "Branded", updatedFrameSvg]);
-    }
-
-    return brandedTemplates;
-  }
-
-  // Helper function to create text properties (headline, punchline, cta)
-  private async createTemplateTexts(connection: any, templateIds: number[], branding: Branding) {
+  private async createTemplateTexts(
+    connection: PoolConnection,
+    templates: Template[],
+    branding: Branding,
+    insertedTemplatesIds: string[]
+  ) {
     const { primaryColor, secondaryColor, additionalColor } = branding;
 
-    const textData = templateIds
-      .map((templateId) => {
-        // Create text for headline, punchline, and cta
-        return [
-          [templateId, "headline", "Default Headline", primaryColor, additionalColor],
-          [templateId, "punchline", "Default Punchline", secondaryColor, additionalColor],
-          [templateId, "cta", "Default CTA", primaryColor, additionalColor],
-        ];
-      })
-      .flat();
+    const insertTemplateTextQuery = `
+      INSERT INTO template_text 
+        (id, type, font_size, font_family, font_weight, text_decoration, font_style, border_radius, border_width, 
+          border_style, border_color, container_color, language, x_coordinate, y_coordinate, color, 
+          template_id, text, text_color_branding_type, container_color_branding_type)
+      VALUES 
+        (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `;
 
-    // Insert text for each template (headline, punchline, cta)
-    const insertTextQuery = `
-    INSERT INTO template_text (template_id, type, text, color, container_color)
-    VALUES (?, ?, ?, ?, ?)
-  `;
-    await connection.query(insertTextQuery, textData);
+    const templateTextsValues: any[] = [];
+
+    const textTypes: ("headline" | "punchline" | "cta")[] = ["headline", "punchline", "cta"];
+
+    templates.forEach((template: Template, index: number) => {
+      const templateId = insertedTemplatesIds[index];
+      console.log(templateId);
+
+      textTypes.forEach((textType) => {
+        const text = template.templateTexts[textType];
+
+        if (text) {
+          templateTextsValues.push([
+            randomUUID(),
+            textType,
+            text.fontSize,
+            text.fontFamily,
+            text.fontWeight,
+            text.textDecorationLine,
+            text.fontStyle,
+            text.borderRadius,
+            text.borderWidth,
+            text.borderStyle,
+            text.borderColor,
+            this.getTextColorBasedOnBranding(
+              text.containerColorBrandingType!,
+              text.containerColor,
+              primaryColor,
+              secondaryColor,
+              additionalColor
+            ),
+            text.language,
+            text.translateX,
+            text.translateY,
+            this.getTextColorBasedOnBranding(
+              text.textColorBrandingType!,
+              text.color,
+              primaryColor,
+              secondaryColor,
+              additionalColor
+            ),
+            templateId,
+            text.text,
+            text.textColorBrandingType,
+            text.containerColorBrandingType,
+          ]);
+        }
+      });
+    });
+
+    if (templateTextsValues.length > 0) {
+      for (const templateText of templateTextsValues) {
+        await connection.query(insertTemplateTextQuery, templateText);
+      }
+    }
   }
-
-  ////////////////////////////////////////////////////////////////////////////////////
 
   public async delete(templateId: string) {
     const sqlQuery = `

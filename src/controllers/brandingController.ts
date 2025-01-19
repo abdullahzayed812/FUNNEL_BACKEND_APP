@@ -38,7 +38,6 @@ export class BrandingController {
         if (defaultBranding?.id) {
           const updateResult = await this.brandingModel.updateDefaultBranding(branding);
 
-          // TODO: Update user templates with changed branding.
           await this.templateModel.updateTemplatesWithBranding(userId, projectId, branding, userRole);
 
           return ResponseHandler.handleSuccess(res, updateResult);
@@ -51,7 +50,6 @@ export class BrandingController {
 
           const result = await this.brandingModel.create(newBranding, projectId, userId);
 
-          // TODO: Update user templates with changed branding.
           await this.templateModel.updateTemplatesWithBranding(userId, projectId, branding, userRole);
 
           return ResponseHandler.handleSuccess(res, result);
@@ -61,8 +59,6 @@ export class BrandingController {
 
         if (userBranding?.id) {
           const updateResult = await this.brandingModel.updateUserBranding(branding);
-
-          // TODO: Update user templates with changed branding.
 
           await this.templateModel.updateTemplatesWithBranding(userId, projectId, branding, userRole);
 
@@ -76,7 +72,6 @@ export class BrandingController {
 
           const result = await this.brandingModel.create(newBranding, projectId, userId);
 
-          // TODO: Update user templates with changed branding.
           await this.templateModel.updateTemplatesWithBranding(userId, projectId, branding, userRole);
 
           return ResponseHandler.handleSuccess(res, result);
