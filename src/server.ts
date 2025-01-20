@@ -36,7 +36,7 @@ export async function createServer(logRequests: boolean = true) {
   app.use(express.json());
   app.use(cors(corsOptions));
   app.use(credentialsMiddleware);
-  app.use("/uploads", express.static(staticAssetPath));
+  app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
   if (logRequests) {
     app.use(requestLoggerMiddleware);

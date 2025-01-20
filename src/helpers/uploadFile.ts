@@ -8,9 +8,9 @@ const __dirname = path.dirname(__filename); // Decode the URL for cross-platform
 // Set up storage engine for multer
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    const dir = path.resolve(__dirname, "..", "uploads");
+    const uploadDir = path.resolve(__dirname, "..", "uploads");
 
-    const uploadDir = dir.slice(3);
+    // const uploadDir = dir.slice(3);
 
     if (!fs.existsSync(uploadDir)) {
       fs.mkdirSync(uploadDir, { recursive: true });
