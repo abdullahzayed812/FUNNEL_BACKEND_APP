@@ -12,7 +12,7 @@ jobs:
         with:
           command: |
             cd 
-            ./deploy-front.sh
+            ./deploy-funnel.sh
           host: ${{ secrets.HOST }}
           user: ubuntu
           key: ${{ secrets.PRIVATE_KEY}}
