@@ -2,8 +2,10 @@ import { randomUUID } from "crypto";
 import { ResponseHandler } from "../helpers/responseHandler";
 export class BrandingController {
     brandingModel;
-    constructor(brandingModel) {
+    templateModel;
+    constructor(brandingModel, templateModel) {
         this.brandingModel = brandingModel;
+        this.templateModel = templateModel;
     }
     getBranding = async (req, res) => {
         try {
@@ -30,6 +32,7 @@ export class BrandingController {
                 const defaultBranding = await this.brandingModel.getProjectBranding(projectId);
                 if (defaultBranding?.id) {
                     const updateResult = await this.brandingModel.updateDefaultBranding(branding);
+                    await this.templateModel.updateTemplatesWithBranding(userId, projectId, branding, userRole);
                     return ResponseHandler.handleSuccess(res, updateResult);
                 }
                 else {
@@ -39,6 +42,7 @@ export class BrandingController {
                         id: randomUUID(),
                     };
                     const result = await this.brandingModel.create(newBranding, projectId, userId);
+                    await this.templateModel.updateTemplatesWithBranding(userId, projectId, branding, userRole);
                     return ResponseHandler.handleSuccess(res, result);
                 }
             }
@@ -46,6 +50,7 @@ export class BrandingController {
                 const userBranding = await this.brandingModel.getUserBranding(userId, projectId);
                 if (userBranding?.id) {
                     const updateResult = await this.brandingModel.updateUserBranding(branding);
+                    await this.templateModel.updateTemplatesWithBranding(userId, projectId, branding, userRole);
                     return ResponseHandler.handleSuccess(res, updateResult);
                 }
                 else {
@@ -55,6 +60,7 @@ export class BrandingController {
                         id: randomUUID(),
                     };
                     const result = await this.brandingModel.create(newBranding, projectId, userId);
+                    await this.templateModel.updateTemplatesWithBranding(userId, projectId, branding, userRole);
                     return ResponseHandler.handleSuccess(res, result);
                 }
             }

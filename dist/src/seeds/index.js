@@ -4,7 +4,7 @@ import { DBConfig } from "../configs/db";
 const dbConfig = DBConfig.getInstance();
 const dbPool = dbConfig.getPool();
 const __filename = new URL(import.meta.url).pathname;
-const __dirname = path.dirname(__filename);
+const __dirname = path.dirname(decodeURIComponent(__filename)); // Decode the URL for cross-platform compatibility
 async function createSeedsTableIfNotExist() {
     const createTableQuery = `
     CREATE TABLE IF NOT EXISTS seeds (

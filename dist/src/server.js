@@ -21,10 +21,14 @@ import { TemplateController } from "./controllers/templateController";
 import { BrandingController } from "./controllers/brandingController";
 import { GeneratedVisualsModel } from "./models/generatedVisualsModle";
 import { GeneratedVisualsController } from "./controllers/generatedVisualsController";
+import { VideoModel } from "./models/videoModel";
+import { VideoController } from "./controllers/videoController";
+import { TemplateTextModel } from "./models/templateTextModel";
 const __filename = new URL(import.meta.url).pathname;
-const __dirname = path.dirname(__filename);
+const __dirname = path.dirname(decodeURIComponent(__filename)); // Decode the URL for cross-platform compatibility
 export async function createServer(logRequests = true) {
     const app = express();
+    const staticAssetPath = path.join(__dirname, "uploads").slice(1);
     app.use(express.json());
     app.use(cors(corsOptions));
     app.use(credentialsMiddleware);
@@ -40,10 +44,13 @@ export async function createServer(logRequests = true) {
     const projectController = new ProjectController(projectModel);
     const imageModel = new ImageModel(pool);
     const imageController = new ImageController(imageModel);
-    const templateModel = new TemplateModel(pool);
+    const videoModel = new VideoModel(pool);
+    const videoController = new VideoController(videoModel);
+    const templateTextModel = new TemplateTextModel(pool);
+    const templateModel = new TemplateModel(pool, templateTextModel);
     const templateController = new TemplateController(templateModel);
     const brandingModel = new BrandingModel(pool);
-    const brandingController = new BrandingController(brandingModel);
+    const brandingController = new BrandingController(brandingModel, templateModel);
     const authMiddleware = new AuthMiddleware(userModel, projectModel, imageModel);
     const generatedVisualsModel = new GeneratedVisualsModel(pool);
     const generatedVisualsController = new GeneratedVisualsController(generatedVisualsModel);
@@ -63,6 +70,10 @@ export async function createServer(logRequests = true) {
         [Endpoints.uploadImage]: imageController.uploadImage,
         [Endpoints.updateImageSelectionStatus]: imageController.updateImageSelection,
         [Endpoints.deleteImage]: imageController.deleteImage,
+        [Endpoints.listVideos]: videoController.listVideos,
+        [Endpoints.uploadVideo]: videoController.uploadVideo,
+        [Endpoints.updateVideoSelectionStatus]: videoController.updateVideoSelection,
+        [Endpoints.deleteVideo]: videoController.deleteVideo,
         [Endpoints.listDefaultTemplates]: templateController.listDefaultTemplates,
         [Endpoints.createTemplate]: templateController.createTemplate,
         [Endpoints.listCustomizedTemplates]: templateController.listCustomizedTemplates,

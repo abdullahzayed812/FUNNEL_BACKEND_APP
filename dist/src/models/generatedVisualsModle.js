@@ -19,6 +19,20 @@ export class GeneratedVisualsModel extends BaseModel {
         const images = await this.executeQuery(sqlQuery, [userId, projectId]);
         return images;
     }
+    async getSelectedVideos(userId, projectId) {
+        const sqlQuery = `
+      SELECT 
+        id,
+        file_path AS url,
+        video_type AS type,
+        is_selected AS isSelected
+      FROM videos v
+      INNER JOIN user_videos ui ON v.id = ui.video_id
+      WHERE ui.user_id = ? AND v.project_id = ? AND ui.is_selected = TRUE
+    `;
+        const images = await this.executeQuery(sqlQuery, [userId, projectId]);
+        return images;
+    }
     // Get selected templates for a specific project and user, including headline, punchline, and CTA texts
     async getSelectedTemplates(userId, projectId) {
         const sqlQuery = `

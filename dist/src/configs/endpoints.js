@@ -14,6 +14,10 @@ export var Endpoints;
     Endpoints["uploadImage"] = "uploadImage";
     Endpoints["updateImageSelectionStatus"] = "updateImageSelectionStatus";
     Endpoints["deleteImage"] = "deleteImage";
+    Endpoints["listVideos"] = "listVideos";
+    Endpoints["uploadVideo"] = "uploadVideo";
+    Endpoints["updateVideoSelectionStatus"] = "updateVideoSelectionStatus";
+    Endpoints["deleteVideo"] = "deleteVideo";
     Endpoints["createTemplate"] = "createTemplate";
     Endpoints["listDefaultTemplates"] = "listDefaultTemplates";
     Endpoints["listCustomizedTemplates"] = "listCustomizedTemplates";
@@ -70,17 +74,38 @@ export const ENDPOINT_CONFIGS = {
     },
     [Endpoints.deleteImage]: {
         method: "delete",
-        url: "/api/v1/project-images/:projectId",
+        url: "/api/v1/project-images",
         auth: true,
         requireImageId: true,
-        requireProjectId: true,
     },
     [Endpoints.updateImageSelectionStatus]: {
         method: "patch",
         url: "/api/v1/project-images/:projectId",
         auth: true,
         requireProjectId: true,
-        requireImageId: true,
+    },
+    [Endpoints.listVideos]: {
+        method: "get",
+        url: "/api/v1/project-videos/:projectId",
+        auth: true,
+        requireProjectId: true,
+    },
+    [Endpoints.uploadVideo]: {
+        method: "post",
+        url: "/api/v1/upload-video/:projectId",
+        auth: true,
+        requireProjectId: true,
+    },
+    [Endpoints.deleteVideo]: {
+        method: "delete",
+        url: "/api/v1/project-videos",
+        auth: true,
+    },
+    [Endpoints.updateVideoSelectionStatus]: {
+        method: "patch",
+        url: "/api/v1/project-videos/:projectId",
+        auth: true,
+        requireProjectId: true,
     },
     [Endpoints.createTemplate]: {
         method: "post",

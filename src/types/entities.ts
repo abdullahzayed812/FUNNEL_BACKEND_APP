@@ -76,6 +76,7 @@ export interface TemplateText {
 export interface Template {
   id: string;
   name: string;
+  tag: string;
   type: string;
   frameSvg: string;
   defaultPrimary: string;
@@ -123,3 +124,5 @@ export interface GeneratedVisuals {
   template: Template;
   image: Image;
 }
+
+export type TemplateTextType = "headline" | "punchline" | "cta";

@@ -5,19 +5,18 @@ export class TemplateController {
         this.templateModel = templateModel;
     }
     listDefaultTemplates = async (req, res) => {
-        const { projectId } = req.params;
         const { userId, role: userRole, projectType } = res.locals;
         try {
             let defaultTemplates;
             if (userRole === "Admin") {
-                defaultTemplates = await this.templateModel.listDefault(userId, projectId);
+                defaultTemplates = await this.templateModel.listDefault(userId);
             }
             else {
                 if (projectType === "Default") {
-                    defaultTemplates = await this.templateModel.listBranded(userId, projectId);
+                    defaultTemplates = await this.templateModel.listBranded(userId);
                 }
                 else {
-                    defaultTemplates = await this.templateModel.listDefault(userId, projectId);
+                    defaultTemplates = await this.templateModel.listDefault(userId);
                 }
             }
             ResponseHandler.handleSuccess(res, { templates: defaultTemplates });
@@ -32,7 +31,7 @@ export class TemplateController {
         try {
             let customizedTemplates;
             if (userRole === "Admin") {
-                customizedTemplates = await this.templateModel.listBranded(projectId, userId);
+                customizedTemplates = await this.templateModel.listBranded(userId);
             }
             else {
                 customizedTemplates = await this.templateModel.listCustomized(projectId, userId);
@@ -77,9 +76,9 @@ export class TemplateController {
         const { templateId } = req.body;
         const { userId } = res.locals;
         try {
-            const templateExists = await this.templateModel.getByUserId(userId);
+            const templateExists = await this.templateModel.getByUserId(userId, projectId);
             if (!templateExists?.id) {
-                ResponseHandler.handleError(res, "Template not found.", 400);
+                return ResponseHandler.handleError(res, "Template not found.", 400);
             }
             const result = await this.templateModel.delete(templateId);
             ResponseHandler.handleSuccess(res, result);

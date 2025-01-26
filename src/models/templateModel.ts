@@ -7,9 +7,10 @@ import { parseSVG } from "../helpers/svg/parseSVG";
 import { collectSvgSegmentsIdsContainsPrimaryProp } from "../helpers/svg/collectShapesIds";
 import { updateShapeColorById } from "../helpers/svg/updateShapeColorById";
 import { serializeSVG } from "../helpers/svg/serializeSVG";
+import { TemplateTextModel } from "./templateTextModel";
 
 export class TemplateModel extends BaseModel {
-  constructor(protected pool: Pool) {
+  constructor(protected pool: Pool, private templateTextModel: TemplateTextModel) {
     super(pool);
   }
 
@@ -19,6 +20,7 @@ export class TemplateModel extends BaseModel {
         t.id,
         t.name,
         t.type,
+        t.tag,
         t.frame_svg AS frameSvg,
         t.default_primary AS defaultPrimary,
         t.default_secondary_color AS defaultSecondary,
@@ -660,9 +662,9 @@ export class TemplateModel extends BaseModel {
 
       const insertTemplateQuery = `
         INSERT INTO templates 
-          (id, name, type, frame_svg, default_primary, default_secondary_color, project_id, user_id)
+          (id, name, tag, type, frame_svg, default_primary, default_secondary_color, project_id, user_id)
         VALUES 
-          (?, ?, ?, ?, ?, ?, ?, ?)
+          (?, ?, ?, ?, ?, ?, ?, ?, ?)
       `;
 
       for (const customizedTemplate of customizedTemplates) {
@@ -693,9 +695,9 @@ export class TemplateModel extends BaseModel {
 
     return defaultTemplates.map((defaultTemplate) => {
       const updatedFrameSvg = this.updateSvgColors(defaultTemplate.frameSvg, primaryColor, secondaryColor);
-      const { name, defaultPrimary, defaultSecondary } = defaultTemplate;
+      const { name, tag, defaultPrimary, defaultSecondary } = defaultTemplate;
 
-      return [randomUUID(), name, type, updatedFrameSvg, defaultPrimary, defaultSecondary, projectId, userId];
+      return [randomUUID(), name, tag, type, updatedFrameSvg, defaultPrimary, defaultSecondary, projectId, userId];
     });
   }
 
@@ -714,13 +716,13 @@ export class TemplateModel extends BaseModel {
       const brandedTemplates = this.prepareTemplates(defaultTemplates, userId, projectId, branding, "Branded");
       const brandedTemplatesIds = brandedTemplates.map((b) => b[0]);
 
-      console.log(brandedTemplatesIds);
+      // console.log(brandedTemplatesIds);
 
       const insertTemplateQuery = `
         INSERT INTO templates 
-          (id, name, type, frame_svg, default_primary, default_secondary_color, project_id, user_id)
+          (id, name, tag, type, frame_svg, default_primary, default_secondary_color, project_id, user_id)
         VALUES 
-          (?, ?, ?, ?, ?, ?, ?, ?)
+          (?, ?, ?, ?, ?, ?, ?, ?, ?)
       `;
 
       for (const brandedTemplate of brandedTemplates) {

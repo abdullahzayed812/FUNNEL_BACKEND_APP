@@ -24,6 +24,7 @@ import { GeneratedVisualsModel } from "./models/generatedVisualsModle";
 import { GeneratedVisualsController } from "./controllers/generatedVisualsController";
 import { VideoModel } from "./models/videoModel";
 import { VideoController } from "./controllers/videoController";
+import { TemplateTextModel } from "./models/templateTextModel";
 
 const __filename = new URL(import.meta.url).pathname;
 const __dirname = path.dirname(decodeURIComponent(__filename)); // Decode the URL for cross-platform compatibility
@@ -36,7 +37,7 @@ export async function createServer(logRequests: boolean = true) {
   app.use(express.json());
   app.use(cors(corsOptions));
   app.use(credentialsMiddleware);
-  app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+  app.use("/uploads", express.static(staticAssetPath));
 
   if (logRequests) {
     app.use(requestLoggerMiddleware);
@@ -57,7 +58,8 @@ export async function createServer(logRequests: boolean = true) {
   const videoModel = new VideoModel(pool);
   const videoController = new VideoController(videoModel);
 
-  const templateModel = new TemplateModel(pool);
+  const templateTextModel = new TemplateTextModel(pool);
+  const templateModel = new TemplateModel(pool, templateTextModel);
   const templateController = new TemplateController(templateModel);
 
   const brandingModel = new BrandingModel(pool);
