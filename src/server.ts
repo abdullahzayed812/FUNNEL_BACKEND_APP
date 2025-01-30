@@ -32,12 +32,12 @@ const __dirname = path.dirname(decodeURIComponent(__filename)); // Decode the UR
 export async function createServer(logRequests: boolean = true) {
   const app = express();
 
-  const staticAssetPath = path.join(__dirname, "uploads").slice(1);
+  // const staticAssetPath = path.join(__dirname, "uploads").slice(1);
 
   app.use(express.json());
   app.use(cors(corsOptions));
   app.use(credentialsMiddleware);
-  app.use("/uploads", express.static(staticAssetPath));
+  app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
   if (logRequests) {
     app.use(requestLoggerMiddleware);
