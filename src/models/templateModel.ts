@@ -8,6 +8,7 @@ import { collectSvgSegmentsIdsContainsPrimaryProp } from "../helpers/svg/collect
 import { updateShapeColorById } from "../helpers/svg/updateShapeColorById";
 import { serializeSVG } from "../helpers/svg/serializeSVG";
 import { TemplateTextModel } from "./templateTextModel";
+import { toCamelCase } from "../helpers/conversion";
 
 export class TemplateModel extends BaseModel {
   constructor(protected pool: Pool, private templateTextModel: TemplateTextModel) {
@@ -21,77 +22,15 @@ export class TemplateModel extends BaseModel {
         t.name,
         t.type,
         t.tag,
-        t.frame_svg AS frameSvg,
-        t.default_primary AS defaultPrimary,
+        t.frame_svg,
+        t.default_primary,
         t.default_secondary_color AS defaultSecondary,
-        t.created_at AS createdAt,
+        t.created_at,
         CASE
           WHEN ut.user_id = ? THEN ut.is_selected
           ELSE NULL
-        END AS isSelected,
-        JSON_OBJECT(
-          'headline', JSON_OBJECT(
-            'text', ht.text,
-            'color', ht.color,
-            'containerColor', ht.container_color,
-            'fontSize', ht.font_size,
-            'fontWeight', ht.font_weight,
-            'fontFamily', ht.font_family,
-            'fontStyle', ht.font_style,
-            'textDecoration', ht.text_decoration,
-            'borderRadius', ht.border_radius,
-            'borderWidth', ht.border_width,
-            'borderStyle', ht.border_style,
-            'borderColor', ht.border_color,
-            'translateX', ht.x_coordinate,
-            'translateY', ht.y_coordinate,
-            'language', ht.language,
-            'textColorBrandingType', ht.text_color_branding_type,
-            'containerColorBrandingType', ht.container_color_branding_type
-          ),
-          'punchline', JSON_OBJECT(
-            'text', pt.text,
-            'color', pt.color,
-            'containerColor', pt.container_color,
-            'fontSize', pt.font_size,
-            'fontWeight', pt.font_weight,
-            'fontFamily', pt.font_family,
-            'fontStyle', pt.font_style,
-            'textDecoration', pt.text_decoration,
-            'borderRadius', pt.border_radius,
-            'borderWidth', pt.border_width,
-            'borderStyle', pt.border_style,
-            'borderColor', pt.border_color,
-            'translateX', pt.x_coordinate,
-            'translateY', pt.y_coordinate,
-            'language', pt.language,
-            'textColorBrandingType', pt.text_color_branding_type,
-            'containerColorBrandingType', pt.container_color_branding_type
-          ),
-          'cta', JSON_OBJECT(
-            'text', ct.text,
-            'color', ct.color,
-            'containerColor', ct.container_color,
-            'fontSize', ct.font_size,
-            'fontWeight', ct.font_weight,
-            'fontFamily', ct.font_family,
-            'fontStyle', ct.font_style,
-            'textDecoration', ct.text_decoration,
-            'borderRadius', ct.border_radius,
-            'borderWidth', ct.border_width,
-            'borderStyle', ct.border_style,
-            'borderColor', ct.border_color,
-            'translateX', ct.x_coordinate,
-            'translateY', ct.y_coordinate,
-            'language', ct.language,
-            'textColorBrandingType', ct.text_color_branding_type,
-            'containerColorBrandingType', ct.container_color_branding_type
-          )
-        ) AS templateTexts
+        END AS isSelected
       FROM templates t
-      LEFT JOIN template_text ht ON t.id = ht.template_id AND ht.type = 'headline'
-      LEFT JOIN template_text pt ON t.id = pt.template_id AND pt.type = 'punchline'
-      LEFT JOIN template_text ct ON t.id = ct.template_id AND ct.type = 'cta'
       LEFT JOIN user_templates ut ON t.id = ut.template_id
       WHERE t.type = 'Default'
     `;
@@ -102,7 +41,7 @@ export class TemplateModel extends BaseModel {
       return [];
     }
 
-    return templates;
+    return this.combineTemplatesWithTexts(templates);
   }
 
   public async listBranded(userId: string) {
@@ -111,77 +50,15 @@ export class TemplateModel extends BaseModel {
         t.id,
         t.name,
         t.type,
-        t.frame_svg AS frameSvg,
-        t.default_primary AS defaultPrimary,
+        t.frame_svg,
+        t.default_primary,
         t.default_secondary_color AS defaultSecondary,
-        t.created_at AS createdAt,
+        t.created_at,
         CASE
           WHEN ut.user_id = ? THEN ut.is_selected
           ELSE NULL
-        END AS isSelected,
-        JSON_OBJECT(
-          'headline', JSON_OBJECT(
-            'text', ht.text,
-            'color', ht.color,
-            'containerColor', ht.container_color,
-            'fontSize', ht.font_size,
-            'fontWeight', ht.font_weight,
-            'fontFamily', ht.font_family,
-            'fontStyle', ht.font_style,
-            'textDecoration', ht.text_decoration,
-            'borderRadius', ht.border_radius,
-            'borderWidth', ht.border_width,
-            'borderStyle', ht.border_style,
-            'borderColor', ht.border_color,
-            'translateX', ht.x_coordinate,
-            'translateY', ht.y_coordinate,
-            'language', ht.language,
-            'textColorBrandingType', ht.text_color_branding_type,
-            'containerColorBrandingType', ht.container_color_branding_type
-          ),
-          'punchline', JSON_OBJECT(
-            'text', pt.text,
-            'color', pt.color,
-            'containerColor', pt.container_color,
-            'fontSize', pt.font_size,
-            'fontWeight', pt.font_weight,
-            'fontFamily', pt.font_family,
-            'fontStyle', pt.font_style,
-            'textDecoration', pt.text_decoration,
-            'borderRadius', pt.border_radius,
-            'borderWidth', pt.border_width,
-            'borderStyle', pt.border_style,
-            'borderColor', pt.border_color,
-            'translateX', pt.x_coordinate,
-            'translateY', pt.y_coordinate,
-            'language', pt.language,
-            'textColorBrandingType', pt.text_color_branding_type,
-            'containerColorBrandingType', pt.container_color_branding_type
-          ),
-          'cta', JSON_OBJECT(
-            'text', ct.text,
-            'color', ct.color,
-            'containerColor', ct.container_color,
-            'fontSize', ct.font_size,
-            'fontWeight', ct.font_weight,
-            'fontFamily', ct.font_family,
-            'fontStyle', ct.font_style,
-            'textDecoration', ct.text_decoration,
-            'borderRadius', ct.border_radius,
-            'borderWidth', ct.border_width,
-            'borderStyle', ct.border_style,
-            'borderColor', ct.border_color,
-            'translateX', ct.x_coordinate,
-            'translateY', ct.y_coordinate,
-            'language', ct.language,
-            'textColorBrandingType', ct.text_color_branding_type,
-            'containerColorBrandingType', ct.container_color_branding_type
-          )
-        ) AS templateTexts
+        END AS isSelected
       FROM templates t
-      LEFT JOIN template_text ht ON t.id = ht.template_id AND ht.type = 'headline'
-      LEFT JOIN template_text pt ON t.id = pt.template_id AND pt.type = 'punchline'
-      LEFT JOIN template_text ct ON t.id = ct.template_id AND ct.type = 'cta'
       LEFT JOIN user_templates ut ON t.id = ut.template_id
       WHERE t.type = 'Branded'
     `;
@@ -192,7 +69,7 @@ export class TemplateModel extends BaseModel {
       return [];
     }
 
-    return templates;
+    return this.combineTemplatesWithTexts(templates);
   }
 
   public async listCustomized(projectId: string, userId: string) {
@@ -201,77 +78,15 @@ export class TemplateModel extends BaseModel {
         t.id,
         t.name,
         t.type,
-        t.frame_svg AS frameSvg,
-        t.default_primary AS defaultPrimary,
+        t.frame_svg,
+        t.default_primary,
         t.default_secondary_color AS defaultSecondary,
-        t.created_at AS createdAt,
+        t.created_at,
         CASE
           WHEN ut.user_id = ? THEN ut.is_selected
           ELSE NULL
-        END AS isSelected,
-        JSON_OBJECT(
-            'headline', JSON_OBJECT(
-                'text', ht.text,
-                'color', ht.color,
-                'containerColor', ht.container_color,
-                'fontSize', ht.font_size,
-                'fontWeight', ht.font_weight,
-                'fontFamily', ht.font_family,
-                'fontStyle', ht.font_style,
-                'textDecoration', ht.text_decoration,
-                'borderRadius', ht.border_radius,
-                'borderWidth', ht.border_width,
-                'borderStyle', ht.border_style,
-                'borderColor', ht.border_color,
-                'translateX', ht.x_coordinate,
-                'translateY', ht.y_coordinate,
-                'language', ht.language,
-                'textColorBrandingType', ht.text_color_branding_type,
-                'containerColorBrandingType', ht.container_color_branding_type
-            ),
-            'punchline', JSON_OBJECT(
-                'text', pt.text,
-                'color', pt.color,
-                'containerColor', pt.container_color,
-                'fontSize', pt.font_size,
-                'fontWeight', pt.font_weight,
-                'fontFamily', pt.font_family,
-                'fontStyle', pt.font_style,
-                'textDecoration', pt.text_decoration,
-                'borderRadius', pt.border_radius,
-                'borderWidth', pt.border_width,
-                'borderStyle', pt.border_style,
-                'borderColor', pt.border_color,
-                'translateX', pt.x_coordinate,
-                'translateY', pt.y_coordinate,
-                'language', pt.language,
-                'textColorBrandingType', pt.text_color_branding_type,
-                'containerColorBrandingType', pt.container_color_branding_type
-            ),
-            'cta', JSON_OBJECT(
-                'text', ct.text,
-                'color', ct.color,
-                'containerColor', ct.container_color,
-                'fontSize', ct.font_size,
-                'fontWeight', ct.font_weight,
-                'fontFamily', ct.font_family,
-                'fontStyle', ct.font_style,
-                'textDecoration', ct.text_decoration,
-                'borderRadius', ct.border_radius,
-                'borderWidth', ct.border_width,
-                'borderStyle', ct.border_style,
-                'borderColor', ct.border_color,
-                'translateX', ct.x_coordinate,
-                'translateY', ct.y_coordinate,
-                'language', ct.language,
-                'textColorBrandingType', ct.text_color_branding_type,
-                'containerColorBrandingType', ct.container_color_branding_type
-            )
-        ) AS templateTexts
+        END AS isSelected
       FROM templates t
-      LEFT JOIN template_text ht ON t.id = ht.template_id AND ht.type = 'headline'
-      LEFT JOIN template_text pt ON t.id = pt.template_id AND pt.type = 'punchline'
-      LEFT JOIN template_text ct ON t.id = ct.template_id AND ct.type = 'cta'
       LEFT JOIN user_templates ut ON t.id = ut.template_id
       WHERE t.user_id = ? 
         AND t.project_id = ? 
@@ -284,7 +99,7 @@ export class TemplateModel extends BaseModel {
       return [];
     }
 
-    return templates;
+    return this.combineTemplatesWithTexts(templates);
   }
 
   public async create(template: Template, projectId: string, userId: string, userRole: string) {
@@ -293,15 +108,6 @@ export class TemplateModel extends BaseModel {
         (id, name, type, frame_svg, default_primary, default_secondary_color, project_id, user_id)
       VALUES 
         (?, ?, ?, ?, ?, ?, ?, ?)
-    `;
-
-    const sqlQueryInsertTemplateText = `
-      INSERT INTO template_text 
-        (id, type, font_size, font_family, font_weight, text_decoration, font_style, border_radius, border_width, 
-          border_style, border_color, container_color, language, x_coordinate, y_coordinate, color, 
-          template_id, text, text_color_branding_type, container_color_branding_type)
-      VALUES 
-        (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
 
     const createdTemplate = await this.executeQuery(sqlQueryInsertTemplate, [
@@ -315,36 +121,7 @@ export class TemplateModel extends BaseModel {
       userId,
     ]);
 
-    const { headline, punchline, cta } = template.templateTexts;
-    const texts = [headline, punchline, cta];
-
-    const insertPromises = texts.map(
-      async (text) =>
-        await this.executeQuery(sqlQueryInsertTemplateText, [
-          text.id,
-          text.type,
-          text.fontSize,
-          text.fontFamily,
-          text.fontWeight,
-          text.textDecorationLine,
-          text.fontStyle,
-          text.borderRadius,
-          text.borderWidth,
-          text.borderStyle,
-          text.borderColor,
-          text.containerColor,
-          text.language,
-          text.translateX,
-          text.translateY,
-          text.color,
-          template.id,
-          text.text,
-          text.textColorBrandingType,
-          text.containerColorBrandingType,
-        ])
-    );
-
-    await Promise.all(insertPromises);
+    await this.templateTextModel.createTemplateText(template);
 
     return createdTemplate;
   }
@@ -367,89 +144,6 @@ export class TemplateModel extends BaseModel {
     const templates = await this.executeQuery<Template>(sqlQuery, [userId, projectId]);
 
     return templates[0];
-  }
-
-  private async getUserTemplates(userId: string, projectId: string) {
-    const sqlQuery = `
-      SELECT 
-      t.id,
-      t.name,
-      t.type,
-      t.frame_svg AS frameSvg,
-      t.default_primary AS defaultPrimary,
-      t.default_secondary_color AS defaultSecondary,
-      t.created_at AS createdAt,
-      JSON_OBJECT(
-        'headline', JSON_OBJECT(
-          'text', ht.text,
-          'color', ht.color,
-          'containerColor', ht.container_color,
-          'fontSize', ht.font_size,
-          'fontWeight', ht.font_weight,
-          'fontFamily', ht.font_family,
-          'fontStyle', ht.font_style,
-          'textDecoration', ht.text_decoration,
-          'borderRadius', ht.border_radius,
-          'borderWidth', ht.border_width,
-          'borderStyle', ht.border_style,
-          'borderColor', ht.border_color,
-          'translateX', ht.x_coordinate,
-          'translateY', ht.y_coordinate,
-          'language', ht.language,
-          'textColorBrandingType', ht.text_color_branding_type,
-          'containerColorBrandingType', ht.container_color_branding_type
-        ),
-        'punchline', JSON_OBJECT(
-          'text', pt.text,
-          'color', pt.color,
-          'containerColor', pt.container_color,
-          'fontSize', pt.font_size,
-          'fontWeight', pt.font_weight,
-          'fontFamily', pt.font_family,
-          'fontStyle', pt.font_style,
-          'textDecoration', pt.text_decoration,
-          'borderRadius', pt.border_radius,
-          'borderWidth', pt.border_width,
-          'borderStyle', pt.border_style,
-          'borderColor', pt.border_color,
-          'translateX', pt.x_coordinate,
-          'translateY', pt.y_coordinate,
-          'language', pt.language,
-          'textColorBrandingType', pt.text_color_branding_type,
-          'containerColorBrandingType', pt.container_color_branding_type
-        ),
-        'cta', JSON_OBJECT(
-          'text', ct.text,
-          'color', ct.color,
-          'containerColor', ct.container_color,
-          'fontSize', ct.font_size,
-          'fontWeight', ct.font_weight,
-          'fontFamily', ct.font_family,
-          'fontStyle', ct.font_style,
-          'textDecoration', ct.text_decoration,
-          'borderRadius', ct.border_radius,
-          'borderWidth', ct.border_width,
-          'borderStyle', ct.border_style,
-          'borderColor', ct.border_color,
-          'translateX', ct.x_coordinate,
-          'translateY', ct.y_coordinate,
-          'language', ct.language,
-          'textColorBrandingType', ct.text_color_branding_type,
-          'containerColorBrandingType', ct.container_color_branding_type
-        )
-      ) AS templateTexts
-      FROM templates t
-      LEFT JOIN template_text ht ON t.id = ht.template_id AND ht.type = 'headline'
-      LEFT JOIN template_text pt ON t.id = pt.template_id AND pt.type = 'punchline'
-      LEFT JOIN template_text ct ON t.id = ct.template_id AND ct.type = 'cta'
-      WHERE user_id = ?
-        AND project_id = ?
-        AND t.type != 'Default'
-    `;
-
-    const templates = await this.executeQuery<Template>(sqlQuery, [userId, projectId]);
-
-    return templates;
   }
 
   public async checkUserTemplate(templateId: string, userId: string) {
@@ -497,6 +191,36 @@ export class TemplateModel extends BaseModel {
     }
   }
 
+  public async delete(templateId: string) {
+    const sqlQuery = `
+      DELETE FROM templates
+      WHERE id = ? AND type = 'Customized'
+    `;
+
+    const sqlQueryDeleteUserTemplate = `
+      DELETE FROM user_templates
+      WHERE template_id = ?
+    `;
+
+    const result1 = await this.executeQuery(sqlQuery, [templateId]);
+    const result2 = await this.executeQuery(sqlQueryDeleteUserTemplate, [templateId]);
+
+    return { result1, result2 };
+  }
+
+  public async addUserTemplate(templateId: string, userId: string, status: boolean) {
+    const sqlQuery = `
+      INSERT INTO user_templates 
+        (user_id, template_id, is_selected)
+      VALUES
+        (?, ?, ?) 
+    `;
+
+    const result = await this.executeQuery(sqlQuery, [userId, templateId, status]);
+
+    return result;
+  }
+
   private async updateExistingTemplates(
     userId: string,
     templates: Template[],
@@ -518,7 +242,7 @@ export class TemplateModel extends BaseModel {
         updatedTemplates.push([updatedFrameSvg, userId, template.id]);
 
         // Process text fields and prepare update data
-        this.updateTemplateTextFields(
+        this.templateTextModel.updateTemplateTextFields(
           template.templateTexts,
           primaryColor,
           secondaryColor,
@@ -529,7 +253,7 @@ export class TemplateModel extends BaseModel {
 
       // Execute bulk updates for templates and text fields
       await this.bulkUpdateTemplates(updatedTemplates, connection);
-      await this.bulkUpdateTemplateText(updatedTextFields, connection);
+      await this.templateTextModel.bulkUpdateTemplateText(updatedTextFields, connection);
 
       // Commit the transaction
       await connection.commit();
@@ -567,62 +291,6 @@ export class TemplateModel extends BaseModel {
     return serializeSVG(svgElements);
   }
 
-  private updateTemplateTextFields(
-    templateTexts: Record<string, any>,
-    primaryColor: string,
-    secondaryColor: string,
-    additionalColor: string,
-    updatedTextFields: string[][]
-  ) {
-    Object.entries(templateTexts).forEach(([textType, textProps]) => {
-      const updatedText = { ...textProps };
-
-      // Update text color based on branding type
-      const textBrandingType = updatedText.textColorBrandingType;
-      const defaultTextColor = updatedText.color;
-
-      const containerBrandingType = updatedText.containerColorBrandingType;
-      const defaultContainerColor = updatedText.containerColor;
-
-      updatedText.color = this.getTextColorBasedOnBranding(
-        textBrandingType,
-        defaultTextColor,
-        primaryColor,
-        secondaryColor,
-        additionalColor
-      );
-      updatedText.containerColor = this.getTextColorBasedOnBranding(
-        containerBrandingType,
-        defaultContainerColor,
-        primaryColor,
-        secondaryColor,
-        additionalColor
-      );
-
-      // Add updated text field for bulk update
-      updatedTextFields.push([updatedText.color, updatedText.containerColor, updatedText.id]);
-    });
-  }
-
-  private getTextColorBasedOnBranding(
-    brandingType: "primary" | "secondary" | "additional",
-    defaultColor: string,
-    primaryColor: string,
-    secondaryColor: string,
-    additionalColor: string
-  ): string {
-    switch (brandingType) {
-      case "primary":
-        return primaryColor;
-      case "secondary":
-        return secondaryColor;
-      case "additional":
-        return additionalColor;
-      default:
-        return defaultColor;
-    }
-  }
-
   private async bulkUpdateTemplates(updatedTemplates: string[][], connection: any) {
     const query = `
     UPDATE templates
@@ -631,17 +299,6 @@ export class TemplateModel extends BaseModel {
   `;
     for (const updatedTemplate of updatedTemplates) {
       await connection.query(query, updatedTemplate);
-    }
-  }
-
-  private async bulkUpdateTemplateText(updatedTextFields: string[][], connection: any) {
-    const query = `
-    UPDATE template_text
-    SET color = ?, container_color = ?
-    WHERE id = ?
-  `;
-    for (const updatedTextField of updatedTextFields) {
-      await connection.query(query, updatedTextField);
     }
   }
 
@@ -671,7 +328,7 @@ export class TemplateModel extends BaseModel {
         await connection.query(insertTemplateQuery, customizedTemplate);
       }
 
-      await this.createTemplateTexts(connection, defaultTemplates, branding, customizedTemplatesIds);
+      await this.templateTextModel.createTemplateTexts(connection, defaultTemplates, branding, customizedTemplatesIds);
 
       await connection.commit();
       console.log("Customized templates created successfully.");
@@ -729,7 +386,7 @@ export class TemplateModel extends BaseModel {
         await connection.query(insertTemplateQuery, brandedTemplate);
       }
 
-      await this.createTemplateTexts(connection, defaultTemplates, branding, brandedTemplatesIds);
+      await this.templateTextModel.createTemplateTexts(connection, defaultTemplates, branding, brandedTemplatesIds);
 
       await connection.commit();
       console.log("Branded templates and text properties created successfully.");
@@ -743,107 +400,43 @@ export class TemplateModel extends BaseModel {
     }
   }
 
-  private async createTemplateTexts(
-    connection: PoolConnection,
-    templates: Template[],
-    branding: Branding,
-    insertedTemplatesIds: string[]
-  ) {
-    const { primaryColor, secondaryColor, additionalColor } = branding;
+  private async combineTemplatesWithTexts(templates: Template[]) {
+    const templatesIds = templates.map((t) => t.id);
 
-    const insertTemplateTextQuery = `
-      INSERT INTO template_text 
-        (id, type, font_size, font_family, font_weight, text_decoration, font_style, border_radius, border_width, 
-          border_style, border_color, container_color, language, x_coordinate, y_coordinate, color, 
-          template_id, text, text_color_branding_type, container_color_branding_type)
-      VALUES 
-        (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `;
+    const allTemplateTexts = await this.templateTextModel.getTemplateTexts(templatesIds);
 
-    const templateTextsValues: any[] = [];
+    const templatesWithTexts = templates.map((template) => {
+      const templateTextsList = allTemplateTexts[template.id];
+      const templateTexts: { [index: string]: TemplateText } = {};
 
-    const textTypes: ("headline" | "punchline" | "cta")[] = ["headline", "punchline", "cta"];
-
-    templates.forEach((template: Template, index: number) => {
-      const templateId = insertedTemplatesIds[index];
-      console.log(templateId);
-
-      textTypes.forEach((textType) => {
-        const text = template.templateTexts[textType];
-
-        if (text) {
-          templateTextsValues.push([
-            randomUUID(),
-            textType,
-            text.fontSize,
-            text.fontFamily,
-            text.fontWeight,
-            text.textDecorationLine,
-            text.fontStyle,
-            text.borderRadius,
-            text.borderWidth,
-            text.borderStyle,
-            text.borderColor,
-            this.getTextColorBasedOnBranding(
-              text.containerColorBrandingType!,
-              text.containerColor,
-              primaryColor,
-              secondaryColor,
-              additionalColor
-            ),
-            text.language,
-            text.translateX,
-            text.translateY,
-            this.getTextColorBasedOnBranding(
-              text.textColorBrandingType!,
-              text.color,
-              primaryColor,
-              secondaryColor,
-              additionalColor
-            ),
-            templateId,
-            text.text,
-            text.textColorBrandingType,
-            text.containerColorBrandingType,
-          ]);
-        }
+      templateTextsList.forEach((text) => {
+        templateTexts[text.type] = text;
       });
+
+      return { ...template, templateTexts };
     });
 
-    if (templateTextsValues.length > 0) {
-      for (const templateText of templateTextsValues) {
-        await connection.query(insertTemplateTextQuery, templateText);
-      }
-    }
+    return templatesWithTexts.map(toCamelCase);
   }
 
-  public async delete(templateId: string) {
+  private async getUserTemplates(userId: string, projectId: string) {
     const sqlQuery = `
-      DELETE FROM templates
-      WHERE id = ? AND type = 'Customized'
+      SELECT 
+      t.id,
+      t.name,
+      t.type,
+      t.frame_svg,
+      t.default_primary,
+      t.default_secondary_color AS defaultSecondary,
+      t.created_at
+      FROM templates t
+      WHERE user_id = ?
+        AND project_id = ?
+        AND t.type != 'Default'
     `;
 
-    const sqlQueryDeleteUserTemplate = `
-      DELETE FROM user_templates
-      WHERE template_id = ?
-    `;
+    const templates = await this.executeQuery<Template>(sqlQuery, [userId, projectId]);
 
-    const result1 = await this.executeQuery(sqlQuery, [templateId]);
-    const result2 = await this.executeQuery(sqlQueryDeleteUserTemplate, [templateId]);
-
-    return { result1, result2 };
-  }
-
-  public async addUserTemplate(templateId: string, userId: string, status: boolean) {
-    const sqlQuery = `
-      INSERT INTO user_templates 
-        (user_id, template_id, is_selected)
-      VALUES
-        (?, ?, ?) 
-    `;
-
-    const result = await this.executeQuery(sqlQuery, [userId, templateId, status]);
-
-    return result;
+    return this.combineTemplatesWithTexts(templates);
   }
 }
