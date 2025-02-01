@@ -82,9 +82,7 @@ export interface Template {
   defaultPrimary: string;
   defaultSecondary: string;
   templateTexts: {
-    headline: TemplateText;
-    punchline: TemplateText;
-    cta: TemplateText;
+    [index: string]: TemplateText;
   };
   isSelected?: boolean;
 }

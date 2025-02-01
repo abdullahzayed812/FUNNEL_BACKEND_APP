@@ -1,35 +1,38 @@
 import { Pool } from "mysql2/promise";
 import { randomUUID } from "crypto";
 import { BaseModel } from "./baseModel";
-import { TemplateText, TemplateTextType } from "../types/entities";
+import { Template, TemplateText, TemplateTextType } from "../types/entities";
+import { toCamelCase } from "../helpers/convertion";
 
 export class TemplateTextModel extends BaseModel {
   constructor(protected pool: Pool) {
     super(pool);
   }
 
-  // Generates JSON query for template text retrieval
-  public getTemplateTextJsonQuery(type: TemplateTextType): string {
-    return `JSON_OBJECT(
-      'id', id,
-      'text', text,
-      'color', color,
-      'containerColor', container_color,
-      'fontSize', font_size,
-      'fontWeight', font_weight,
-      'fontFamily', font_family,
-      'fontStyle', font_style,
-      'textDecoration', text_decoration,
-      'borderRadius', border_radius,
-      'borderWidth', border_width,
-      'borderStyle', border_style,
-      'borderColor', border_color,
-      'translateX', x_coordinate,
-      'translateY', y_coordinate,
-      'language', language,
-      'textColorBrandingType', text_color_branding_type,
-      'containerColorBrandingType', container_color_branding_type
-    )`;
+  public async getTemplateTexts(templateIds: string[]) {
+    if (templateIds.length === 0) return {}; // لا يوجد قوالب
+
+    const placeholders = templateIds.map(() => "?").join(","); // إنشاء `?, ?, ?` ديناميكيًا
+    const sqlQuery = `
+      SELECT * FROM template_text 
+      WHERE template_id IN (${placeholders})
+    `;
+
+    const templateTexts = await this.executeQuery<TemplateText>(sqlQuery, templateIds);
+
+    // ✅ تجميع النصوص حسب `template_id`
+    const groupedTexts: { [key: string]: TemplateText } = {};
+
+    templateTexts.forEach((text) => {
+      const templateId = text.templateId;
+
+      if (!groupedTexts[templateId]) {
+        groupedTexts[templateId] = [];
+      }
+      groupedTexts[templateId].push(toCamelCase(text));
+    });
+
+    return groupedTexts;
   }
 
   public async createTemplateTexts(
