@@ -409,7 +409,7 @@ export class TemplateModel extends BaseModel {
       const templateTextsList = allTemplateTexts[template.id];
       const templateTexts: { [index: string]: TemplateText } = {};
 
-      templateTextsList.forEach((text) => {
+      templateTextsList?.forEach((text) => {
         templateTexts[text.type] = text;
       });
 
