@@ -221,6 +221,25 @@ export class TemplateModel extends BaseModel {
     return result;
   }
 
+  public async combineTemplatesWithTexts(templates: Template[]) {
+    const templatesIds = templates.map((t) => t.id);
+
+    const allTemplateTexts = await this.templateTextModel.getTemplateTexts(templatesIds);
+
+    const templatesWithTexts = templates.map((template) => {
+      const templateTextsList = allTemplateTexts[template.id];
+      const templateTexts: { [index: string]: TemplateText } = {};
+
+      templateTextsList.forEach((text) => {
+        templateTexts[text.type] = text;
+      });
+
+      return { ...template, templateTexts };
+    });
+
+    return templatesWithTexts.map(toCamelCase);
+  }
+
   private async updateExistingTemplates(
     userId: string,
     templates: Template[],
@@ -398,25 +417,6 @@ export class TemplateModel extends BaseModel {
     } finally {
       connection.release();
     }
-  }
-
-  private async combineTemplatesWithTexts(templates: Template[]) {
-    const templatesIds = templates.map((t) => t.id);
-
-    const allTemplateTexts = await this.templateTextModel.getTemplateTexts(templatesIds);
-
-    const templatesWithTexts = templates.map((template) => {
-      const templateTextsList = allTemplateTexts[template.id];
-      const templateTexts: { [index: string]: TemplateText } = {};
-
-      templateTextsList.forEach((text) => {
-        templateTexts[text.type] = text;
-      });
-
-      return { ...template, templateTexts };
-    });
-
-    return templatesWithTexts.map(toCamelCase);
   }
 
   private async getUserTemplates(userId: string, projectId: string) {
