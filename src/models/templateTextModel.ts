@@ -145,11 +145,11 @@ export class TemplateTextModel extends BaseModel {
 
     const textTypes: ("headline" | "punchline" | "cta")[] = ["headline", "punchline", "cta"];
 
-    templates.forEach((template: Template, index: number) => {
+    templates?.forEach((template: Template, index: number) => {
       const templateId = insertedTemplatesIds[index];
       console.log(templateId);
 
-      textTypes.forEach((textType) => {
+      textTypes?.forEach((textType) => {
         const text = template.templateTexts[textType];
 
         if (text) {
