@@ -67,7 +67,7 @@ export async function createServer(logRequests: boolean = true) {
 
   const authMiddleware = new AuthMiddleware(userModel, projectModel, imageModel);
 
-  const generatedVisualsModel = new GeneratedVisualsModel(pool);
+  const generatedVisualsModel = new GeneratedVisualsModel(pool, templateModel);
   const generatedVisualsController = new GeneratedVisualsController(generatedVisualsModel);
 
   // Map endpoints to controllers

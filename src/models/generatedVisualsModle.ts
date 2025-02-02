@@ -1,13 +1,11 @@
 import { Pool } from "mysql2/promise";
-import { Image } from "../types/entities";
+import { Image, Template } from "../types/entities";
 import { BaseModel } from "./baseModel";
+import { TemplateModel } from "./templateModel";
 
 export class GeneratedVisualsModel extends BaseModel {
-  protected pool: Pool;
-
-  constructor(pool: Pool) {
+  constructor(protected pool: Pool, private templateModel: TemplateModel) {
     super(pool);
-    this.pool = pool;
   }
 
   public async getSelectedImages(userId: string, projectId: string) {
@@ -51,74 +49,18 @@ export class GeneratedVisualsModel extends BaseModel {
         t.id,
         t.name,
         t.type,
-        t.frame_svg AS frameSvg,
-        t.default_primary AS defaultPrimaryColor,
+        t.frame_svg,
+        t.default_primary,
         t.default_secondary_color AS defaultSecondaryColor,
-        t.created_at AS createdAt,
-        JSON_OBJECT(
-          'headline', JSON_OBJECT(
-            'text', ht.text,
-            'color', ht.color,
-            'containerColor', ht.container_color,
-            'fontSize', ht.font_size,
-            'fontWeight', ht.font_weight,
-            'fontFamily', ht.font_family,
-            'fontStyle', ht.font_style,
-            'textDecoration', ht.text_decoration,
-            'borderRadius', ht.border_radius,
-            'borderWidth', ht.border_width,
-            'borderStyle', ht.border_style,
-            'borderColor', ht.border_color,
-            'translateX', ht.x_coordinate,
-            'translateY', ht.y_coordinate,
-            'language', ht.language
-          ),
-          'punchline', JSON_OBJECT(
-            'text', pt.text,
-            'color', pt.color,
-            'containerColor', pt.container_color,
-            'fontSize', pt.font_size,
-            'fontWeight', pt.font_weight,
-            'fontFamily', pt.font_family,
-            'fontStyle', pt.font_style,
-            'textDecoration', pt.text_decoration,
-            'borderRadius', pt.border_radius,
-            'borderWidth', pt.border_width,
-            'borderStyle', pt.border_style,
-            'borderColor', pt.border_color,
-            'translateX', pt.x_coordinate,
-            'translateY', pt.y_coordinate,
-            'language', pt.language
-          ),
-          'cta', JSON_OBJECT(
-            'text', ct.text,
-            'color', ct.color,
-            'containerColor', ct.container_color,
-            'fontSize', ct.font_size,
-            'fontWeight', ct.font_weight,
-            'fontFamily', ct.font_family,
-            'fontStyle', ct.font_style,
-            'textDecoration', ct.text_decoration,
-            'borderRadius', ct.border_radius,
-            'borderWidth', ct.border_width,
-            'borderStyle', ct.border_style,
-            'borderColor', ct.border_color,
-            'translateX', ct.x_coordinate,
-            'translateY', ct.y_coordinate,
-            'language', ct.language
-          )
-        ) AS templateTexts
+        t.created_at
       FROM templates t
       INNER JOIN user_templates ut ON t.id = ut.template_id
-      LEFT JOIN template_text ht ON t.id = ht.template_id AND ht.type = 'headline'
-      LEFT JOIN template_text pt ON t.id = pt.template_id AND pt.type = 'punchline'
-      LEFT JOIN template_text ct ON t.id = ct.template_id AND ct.type = 'cta'
       WHERE ut.user_id = ?
       AND t.project_id = ? AND ut.is_selected = TRUE
     `;
 
-    const templates = await this.executeQuery(sqlQuery, [userId, projectId]);
+    const templates = await this.executeQuery<Template>(sqlQuery, [userId, projectId]);
 
-    return templates;
+    return this.templateModel.combineTemplatesWithTexts(templates);
   }
 }
