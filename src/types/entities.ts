@@ -123,5 +123,3 @@ export interface GeneratedVisuals {
   template: Template;
   image: Image;
 }
-
-export type TemplateTextType = "headline" | "punchline" | "cta";

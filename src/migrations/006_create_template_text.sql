@@ -1,6 +1,6 @@
 CREATE TABLE IF NOT EXISTS template_text (
   id                            VARCHAR(255) PRIMARY KEY,
-  type                          ENUM('headline', 'punchline', 'cta'),
+  type                          VARCHAR(50) NOT NULL,
   text                          TEXT NOT NULL,
   font_size                     INT,
   font_family                   VARCHAR(255),

@@ -44,34 +44,32 @@ export class TemplateTextModel extends BaseModel {
         (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
 
-    const { headline, punchline, cta } = template.templateTexts;
-    const texts = [headline, punchline, cta];
+    const insertPromises = Object.keys(template.templateTexts).map(async (textType) => {
+      const text = template.templateTexts[textType];
 
-    const insertPromises = texts.map(
-      async (text) =>
-        await this.executeQuery(sqlQueryInsertTemplateText, [
-          text.id,
-          text.type,
-          text.fontSize,
-          text.fontFamily,
-          text.fontWeight,
-          text.textDecorationLine,
-          text.fontStyle,
-          text.borderRadius,
-          text.borderWidth,
-          text.borderStyle,
-          text.borderColor,
-          text.containerColor,
-          text.language,
-          text.xCoordinate,
-          text.yCoordinate,
-          text.color,
-          template.id,
-          text.text,
-          text.textColorBrandingType,
-          text.containerColorBrandingType,
-        ])
-    );
+      return this.executeQuery(sqlQueryInsertTemplateText, [
+        text.id,
+        text.type,
+        text.fontSize,
+        text.fontFamily,
+        text.fontWeight,
+        text.textDecorationLine,
+        text.fontStyle,
+        text.borderRadius,
+        text.borderWidth,
+        text.borderStyle,
+        text.borderColor,
+        text.containerColor,
+        text.language,
+        text.xCoordinate,
+        text.yCoordinate,
+        text.color,
+        template.id,
+        text.text,
+        text.textColorBrandingType,
+        text.containerColorBrandingType,
+      ]);
+    });
 
     await Promise.all(insertPromises);
   }
@@ -143,13 +141,10 @@ export class TemplateTextModel extends BaseModel {
 
     const templateTextsValues: any[] = [];
 
-    const textTypes: ("headline" | "punchline" | "cta")[] = ["headline", "punchline", "cta"];
-
     templates?.forEach((template: Template, index: number) => {
       const templateId = insertedTemplatesIds[index];
-      console.log(templateId);
 
-      textTypes?.forEach((textType) => {
+      Object.keys(template.templateTexts).forEach((textType) => {
         const text = template.templateTexts[textType];
 
         if (text) {

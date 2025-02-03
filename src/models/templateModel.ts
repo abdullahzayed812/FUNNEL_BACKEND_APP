@@ -105,15 +105,16 @@ export class TemplateModel extends BaseModel {
   public async create(template: Template, projectId: string, userId: string, userRole: string) {
     const sqlQueryInsertTemplate = `
       INSERT INTO templates 
-        (id, name, type, frame_svg, default_primary, default_secondary_color, project_id, user_id)
+        (id, name, type, tag, frame_svg, default_primary, default_secondary_color, project_id, user_id)
       VALUES 
-        (?, ?, ?, ?, ?, ?, ?, ?)
+        (?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
 
     const createdTemplate = await this.executeQuery(sqlQueryInsertTemplate, [
       template.id,
       template.name,
       userRole === "Admin" ? "Branded" : "Customized",
+      template.tag,
       template.frameSvg,
       template.defaultPrimary,
       template.defaultSecondary,
