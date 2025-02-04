@@ -1,4 +1,4 @@
-import { OkPacket, Pool, PoolConnection } from "mysql2/promise";
+import { Pool } from "mysql2/promise";
 import { Branding, Template, TemplateText } from "../types/entities";
 import { BaseModel } from "./baseModel";
 import { randomUUID } from "crypto";
