@@ -74,6 +74,13 @@ export interface TemplateText {
   language?: string;
 }
 
+export interface TemplateLogo {
+  id: string;
+  logoData: string;
+  xCoordinate: number;
+  yCoordinate: number;
+}
+
 export interface Template {
   id: string;
   name: string;
@@ -82,6 +89,7 @@ export interface Template {
   frameSvg: string;
   defaultPrimary: string;
   defaultSecondary: string;
+  templateLogos: TemplateLogo[];
   templateTexts: {
     [index: string]: TemplateText;
   };

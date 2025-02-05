@@ -61,6 +61,6 @@ export class GeneratedVisualsModel extends BaseModel {
 
     const templates = await this.executeQuery<Template>(sqlQuery, [userId, projectId]);
 
-    return this.templateModel.combineTemplatesWithTexts(templates);
+    return this.templateModel.combineTemplatesWithTextsAndLogos(templates);
   }
 }

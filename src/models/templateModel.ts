@@ -9,9 +9,14 @@ import { updateShapeColorById } from "../helpers/svg/updateShapeColorById";
 import { serializeSVG } from "../helpers/svg/serializeSVG";
 import { TemplateTextModel } from "./templateTextModel";
 import { toCamelCase } from "../helpers/conversion";
+import { TemplateLogoModel } from "./templateLogoModel";
 
 export class TemplateModel extends BaseModel {
-  constructor(protected pool: Pool, private templateTextModel: TemplateTextModel) {
+  constructor(
+    protected pool: Pool,
+    private templateTextModel: TemplateTextModel,
+    private templateLogoModel: TemplateLogoModel
+  ) {
     super(pool);
   }
 
@@ -41,7 +46,7 @@ export class TemplateModel extends BaseModel {
       return [];
     }
 
-    return this.combineTemplatesWithTexts(templates);
+    return this.combineTemplatesWithTextsAndLogos(templates);
   }
 
   public async listBranded(userId: string) {
@@ -69,7 +74,7 @@ export class TemplateModel extends BaseModel {
       return [];
     }
 
-    return this.combineTemplatesWithTexts(templates);
+    return this.combineTemplatesWithTextsAndLogos(templates);
   }
 
   public async listCustomized(projectId: string, userId: string) {
@@ -99,7 +104,7 @@ export class TemplateModel extends BaseModel {
       return [];
     }
 
-    return this.combineTemplatesWithTexts(templates);
+    return this.combineTemplatesWithTextsAndLogos(templates);
   }
 
   public async create(template: Template, projectId: string, userId: string, userRole: string) {
@@ -123,6 +128,7 @@ export class TemplateModel extends BaseModel {
     ]);
 
     await this.templateTextModel.createTemplateText(template);
+    await this.templateLogoModel.create(template.templateLogos, template.id);
 
     return createdTemplate;
   }
@@ -222,23 +228,25 @@ export class TemplateModel extends BaseModel {
     return result;
   }
 
-  public async combineTemplatesWithTexts(templates: Template[]) {
+  public async combineTemplatesWithTextsAndLogos(templates: Template[]) {
     const templatesIds = templates.map((t) => t.id);
 
-    const allTemplateTexts = await this.templateTextModel.getTemplateTexts(templatesIds);
+    const allTemplatesTexts = await this.templateTextModel.getTemplateTexts(templatesIds);
+    const allTemplatesLogos = await this.templateLogoModel.get(templatesIds);
 
-    const templatesWithTexts = templates.map((template) => {
-      const templateTextsList = allTemplateTexts[template.id];
+    const templatesWithTextsAndLogos = templates.map((template) => {
+      const templateTextsList = allTemplatesTexts[template.id];
+      const templateLogos = allTemplatesLogos[template.id];
       const templateTexts: { [index: string]: TemplateText } = {};
 
       templateTextsList?.forEach((text) => {
         templateTexts[text.type] = text;
       });
 
-      return { ...template, templateTexts };
+      return { ...template, templateTexts, templateLogos };
     });
 
-    return templatesWithTexts.map(toCamelCase);
+    return templatesWithTextsAndLogos.map(toCamelCase);
   }
 
   private async updateExistingTemplates(
@@ -255,13 +263,10 @@ export class TemplateModel extends BaseModel {
       const updatedTemplates: string[][] = [];
       const updatedTextFields: string[][] = [];
 
-      // Process each template for updating frame SVG and text fields
       for (const template of templates) {
-        // Update SVG colors and text fields
         const updatedFrameSvg = this.updateSvgColors(template.frameSvg, primaryColor, secondaryColor);
         updatedTemplates.push([updatedFrameSvg, userId, template.id]);
 
-        // Process text fields and prepare update data
         this.templateTextModel.updateTemplateTextFields(
           template.templateTexts,
           primaryColor,
@@ -271,15 +276,12 @@ export class TemplateModel extends BaseModel {
         );
       }
 
-      // Execute bulk updates for templates and text fields
       await this.bulkUpdateTemplates(updatedTemplates, connection);
       await this.templateTextModel.bulkUpdateTemplateText(updatedTextFields, connection);
 
-      // Commit the transaction
       await connection.commit();
       console.log("Bulk templates and text fields updated successfully.");
     } catch (error: any) {
-      // Rollback on error
       await connection.rollback();
       console.error("Error during bulk update:", error.message);
       throw new AppError("Bulk update failed");
@@ -291,11 +293,9 @@ export class TemplateModel extends BaseModel {
   private updateSvgColors(frameSvg: string, primaryColor: string, secondaryColor: string): string {
     let svgElements = parseSVG(frameSvg);
 
-    // Collect shape IDs based on branding
     const primaryIds = collectSvgSegmentsIdsContainsPrimaryProp(svgElements, "hasPrimary");
     const secondaryIds = collectSvgSegmentsIdsContainsPrimaryProp(svgElements, "hasSecondary");
 
-    // Update SVG colors with branding
     if (primaryColor) {
       primaryIds?.forEach((id) => {
         svgElements = updateShapeColorById(svgElements, id, true, primaryColor);
@@ -350,6 +350,9 @@ export class TemplateModel extends BaseModel {
 
       await this.templateTextModel.createTemplateTexts(connection, defaultTemplates, branding, customizedTemplatesIds);
 
+      const templatesLogos = defaultTemplates.map((dt: Template) => dt.templateLogos);
+      await this.templateLogoModel.createTemplateLogos(connection, templatesLogos, customizedTemplatesIds);
+
       await connection.commit();
       console.log("Customized templates created successfully.");
     } catch (error: any) {
@@ -361,6 +364,7 @@ export class TemplateModel extends BaseModel {
       connection.release();
     }
   }
+
   private prepareTemplates(
     defaultTemplates: Template[],
     userId: string,
@@ -408,6 +412,9 @@ export class TemplateModel extends BaseModel {
 
       await this.templateTextModel.createTemplateTexts(connection, defaultTemplates, branding, brandedTemplatesIds);
 
+      const templatesLogos = defaultTemplates.map((dt: Template) => dt.templateLogos);
+      await this.templateLogoModel.createTemplateLogos(connection, templatesLogos, brandedTemplatesIds);
+
       await connection.commit();
       console.log("Branded templates and text properties created successfully.");
     } catch (error: any) {
@@ -438,6 +445,6 @@ export class TemplateModel extends BaseModel {
 
     const templates = await this.executeQuery<Template>(sqlQuery, [userId, projectId]);
 
-    return this.combineTemplatesWithTexts(templates);
+    return this.combineTemplatesWithTextsAndLogos(templates);
   }
 }

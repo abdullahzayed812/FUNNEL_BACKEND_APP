@@ -25,6 +25,7 @@ import { GeneratedVisualsController } from "./controllers/generatedVisualsContro
 import { VideoModel } from "./models/videoModel";
 import { VideoController } from "./controllers/videoController";
 import { TemplateTextModel } from "./models/templateTextModel";
+import { TemplateLogoModel } from "./models/templateLogoModel";
 
 const __filename = new URL(import.meta.url).pathname;
 const __dirname = path.dirname(decodeURIComponent(__filename)); // Decode the URL for cross-platform compatibility
@@ -59,7 +60,9 @@ export async function createServer(logRequests: boolean = true) {
   const videoController = new VideoController(videoModel);
 
   const templateTextModel = new TemplateTextModel(pool);
-  const templateModel = new TemplateModel(pool, templateTextModel);
+  const templateLogoModel = new TemplateLogoModel(pool);
+
+  const templateModel = new TemplateModel(pool, templateTextModel, templateLogoModel);
   const templateController = new TemplateController(templateModel);
 
   const brandingModel = new BrandingModel(pool);

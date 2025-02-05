@@ -13,6 +13,7 @@ export class TemplateTextModel extends BaseModel {
     if (templateIds.length === 0) return {};
 
     const placeholders = templateIds.map(() => "?").join(",");
+
     const sqlQuery = `
       SELECT * FROM template_text 
       WHERE template_id IN (${placeholders})
