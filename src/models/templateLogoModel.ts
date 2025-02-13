@@ -20,7 +20,7 @@ export class TemplateLogoModel extends BaseModel {
     const placeholders = templatesIds.map(() => "?").join(",");
 
     const sqlQuery = `
-      SELECT id, url AS logoData, x_coordinate, y_coordinate, template_id FROM template_logos 
+      SELECT id, logo_data, x_coordinate, y_coordinate, template_id FROM template_logos 
       WHERE template_id IN (${placeholders})
     `;
 
@@ -48,7 +48,7 @@ export class TemplateLogoModel extends BaseModel {
     }
 
     const sqlQuery = `
-      INSERT INTO template_logos (id, url, x_coordinate, y_coordinate, template_id)
+      INSERT INTO template_logos (id, logo_data, x_coordinate, y_coordinate, template_id)
       VALUES (?, ?, ?, ?, ?)
     `;
 
@@ -81,7 +81,7 @@ export class TemplateLogoModel extends BaseModel {
     }
 
     const sqlQuery = `
-      INSERT INTO template_logos (id, url, x_coordinate, y_coordinate, template_id)
+      INSERT INTO template_logos (id, logo_data, x_coordinate, y_coordinate, template_id)
       VALUES (?, ?, ?, ?, ?)
     `;
 
