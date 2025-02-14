@@ -20,7 +20,7 @@ export class TemplateLogoModel extends BaseModel {
     const placeholders = templatesIds.map(() => "?").join(",");
 
     const sqlQuery = `
-      SELECT id, logo_data, x_coordinate, y_coordinate, template_id FROM template_logos 
+      SELECT * FROM template_logos 
       WHERE template_id IN (${placeholders})
     `;
 
