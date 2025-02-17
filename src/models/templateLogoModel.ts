@@ -40,7 +40,7 @@ export class TemplateLogoModel extends BaseModel {
     return groupedLogos;
   }
 
-  public async create(templateLogos: TemplateLogo[], templateId: string) {
+  public async createTemplateLogo(templateLogos: TemplateLogo[], templateId: string) {
     const imageDir = path.join(__dirname, "..", "uploads");
 
     if (!fs.existsSync(imageDir)) {

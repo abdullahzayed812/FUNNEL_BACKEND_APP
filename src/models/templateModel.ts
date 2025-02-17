@@ -10,12 +10,14 @@ import { serializeSVG } from "../helpers/svg/serializeSVG";
 import { TemplateTextModel } from "./templateTextModel";
 import { toCamelCase } from "../helpers/conversion";
 import { TemplateLogoModel } from "./templateLogoModel";
+import { ProjectTemplatesModel } from "./projectTemplates";
 
 export class TemplateModel extends BaseModel {
   constructor(
     protected pool: Pool,
     private templateTextModel: TemplateTextModel,
-    private templateLogoModel: TemplateLogoModel
+    private templateLogoModel: TemplateLogoModel,
+    private projectTemplatesModel: ProjectTemplatesModel
   ) {
     super(pool);
   }
@@ -31,12 +33,14 @@ export class TemplateModel extends BaseModel {
         t.default_primary,
         t.default_secondary_color AS defaultSecondary,
         t.created_at,
+        pt.project_id,
         CASE
           WHEN ut.user_id = ? THEN ut.is_selected
           ELSE NULL
         END AS isSelected
       FROM templates t
       LEFT JOIN user_templates ut ON t.id = ut.template_id
+      LEFT JOIN project_templates pt ON t.id = pt.template_id
       WHERE t.type = 'Default'
     `;
 
@@ -59,12 +63,14 @@ export class TemplateModel extends BaseModel {
         t.default_primary,
         t.default_secondary_color AS defaultSecondary,
         t.created_at,
+        pt.project_id,
         CASE
           WHEN ut.user_id = ? THEN ut.is_selected
           ELSE NULL
         END AS isSelected
       FROM templates t
       LEFT JOIN user_templates ut ON t.id = ut.template_id
+      LEFT JOIN project_templates pt ON t.id = pt.template_id
       WHERE t.type = 'Branded'
     `;
 
@@ -87,14 +93,16 @@ export class TemplateModel extends BaseModel {
         t.default_primary,
         t.default_secondary_color AS defaultSecondary,
         t.created_at,
+        pt.project_id,
         CASE
           WHEN ut.user_id = ? THEN ut.is_selected
           ELSE NULL
         END AS isSelected
       FROM templates t
       LEFT JOIN user_templates ut ON t.id = ut.template_id
-      WHERE t.user_id = ? 
-        AND t.project_id = ? 
+      LEFT JOIN project_templates pt ON t.id = pt.template_id
+      WHERE t.user_id = ?
+        AND pt.project_id = ?
         AND t.type = 'Customized'
     `;
 
@@ -110,9 +118,9 @@ export class TemplateModel extends BaseModel {
   public async create(template: Template, projectId: string, userId: string, userRole: string) {
     const sqlQueryInsertTemplate = `
       INSERT INTO templates 
-        (id, name, type, tag, frame_svg, default_primary, default_secondary_color, project_id, user_id)
+        (id, name, type, tag, frame_svg, default_primary, default_secondary_color, user_id)
       VALUES 
-        (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        (?, ?, ?, ?, ?, ?, ?, ?)
     `;
 
     const createdTemplate = await this.executeQuery(sqlQueryInsertTemplate, [
@@ -123,12 +131,12 @@ export class TemplateModel extends BaseModel {
       template.frameSvg,
       template.defaultPrimary,
       template.defaultSecondary,
-      projectId,
       userId,
     ]);
 
     await this.templateTextModel.createTemplateText(template);
-    await this.templateLogoModel.create(template.templateLogos, template.id);
+    await this.templateLogoModel.createTemplateLogo(template.templateLogos, template.id);
+    await this.projectTemplatesModel.createProjectTemplate(projectId, template.id);
 
     return createdTemplate;
   }
@@ -436,8 +444,10 @@ export class TemplateModel extends BaseModel {
       t.frame_svg,
       t.default_primary,
       t.default_secondary_color AS defaultSecondary,
-      t.created_at
+      t.created_at,
+      pt.project_id,
       FROM templates t
+      LEFT JOIN project_templates pt ON t.id = pt.template_id
       WHERE user_id = ?
         AND project_id = ?
         AND t.type != 'Default'
