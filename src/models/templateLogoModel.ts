@@ -1,4 +1,4 @@
-import { Pool } from "mysql2/promise";
+import { Pool, PoolClient } from "pg";
 import { BaseModel } from "./baseModel";
 import { TemplateLogo } from "../types/entities";
 import { toCamelCase } from "../helpers/conversion";
@@ -17,8 +17,7 @@ export class TemplateLogoModel extends BaseModel {
   public async get(templatesIds: string[]) {
     if (templatesIds.length === 0) return {};
 
-    const placeholders = templatesIds.map(() => "?").join(",");
-
+    const placeholders = templatesIds.map((_, i) => `$${i + 1}`).join(", ");
     const sqlQuery = `
       SELECT * FROM template_logos 
       WHERE template_id IN (${placeholders})
@@ -49,7 +48,7 @@ export class TemplateLogoModel extends BaseModel {
 
     const sqlQuery = `
       INSERT INTO template_logos (id, logo_data, x_coordinate, y_coordinate, template_id)
-      VALUES (?, ?, ?, ?, ?)
+      VALUES ($1, $2, $3, $4, $5)
     `;
 
     const insertedPromises = templateLogos.map(async (templateLogo) => {
@@ -73,19 +72,16 @@ export class TemplateLogoModel extends BaseModel {
     console.log("Template logos created successfully.");
   }
 
-  public async createTemplateLogos(connection: any, templatesLogos: TemplateLogo[][], templatesIds: string[]) {
+  public async createTemplateLogos(connection: PoolClient, templatesLogos: TemplateLogo[][], templatesIds: string[]) {
     const imageDir = path.join(__dirname, "..", "uploads");
 
     if (!fs.existsSync(imageDir)) {
       fs.mkdirSync(imageDir);
     }
 
-    const sqlQuery = `
-      INSERT INTO template_logos (id, logo_data, x_coordinate, y_coordinate, template_id)
-      VALUES (?, ?, ?, ?, ?)
-    `;
-
     const values: any[] = [];
+    let paramCounter = 1;
+    const placeholders: string[] = [];
 
     const insertedPromises = templatesLogos.map(async (logos, index) => {
       const templateId = templatesIds[index];
@@ -102,18 +98,26 @@ export class TemplateLogoModel extends BaseModel {
 
           const fileUrl = `/uploads/${filename}`;
 
-          values.push([id, fileUrl, xCoordinate, yCoordinate, templateId]);
+          values.push(id, fileUrl, xCoordinate, yCoordinate, templateId);
+          placeholders.push(
+            `($${paramCounter++}, $${paramCounter++}, $${paramCounter++}, $${paramCounter++}, $${paramCounter++})`
+          );
         } catch (error) {
           console.error("Error while saving the image:", error);
-          throw new Error("Failed to save image.");
+          throw new AppError("Failed to save image.");
         }
       }
     });
 
     await Promise.all(insertedPromises);
 
+    const sqlQuery = `
+      INSERT INTO template_logos (id, logo_data, x_coordinate, y_coordinate, template_id)
+      VALUES ${placeholders.join(", ")}
+    `;
+
     try {
-      await connection.query(sqlQuery, [values]);
+      await connection.query(sqlQuery, values);
       console.log("Template logos created successfully.");
     } catch (error: any) {
       console.error("Error during template logos creation:", error.message);

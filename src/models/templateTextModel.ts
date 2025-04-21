@@ -1,4 +1,4 @@
-import { Pool, PoolConnection } from "mysql2/promise";
+import { Pool, PoolClient } from "pg"; // Import the pg library
 import { BaseModel } from "./baseModel";
 import { Branding, Template, TemplateText } from "../types/entities";
 import { toCamelCase } from "../helpers/conversion";
@@ -12,18 +12,18 @@ export class TemplateTextModel extends BaseModel {
   public async getTemplateTexts(templateIds: string[]) {
     if (templateIds.length === 0) return {};
 
-    const placeholders = templateIds.map(() => "?").join(",");
+    const placeholders = templateIds.map((_, index) => `$${index + 1}`).join(","); // Use $1, $2, etc.
 
     const sqlQuery = `
       SELECT * FROM template_text 
       WHERE template_id IN (${placeholders})
     `;
 
-    const templateTexts = await this.executeQuery<TemplateText>(sqlQuery, templateIds);
+    const result = await this.executeQuery<TemplateText>(sqlQuery, templateIds);
 
     const groupedTexts: { [key: string]: TemplateText[] } = {};
 
-    templateTexts.map(toCamelCase).forEach((text) => {
+    result.map(toCamelCase).forEach((text) => {
       const templateId = text.templateId;
 
       if (!groupedTexts[templateId]) {
@@ -42,14 +42,14 @@ export class TemplateTextModel extends BaseModel {
           border_style, border_color, container_color, language, x_coordinate, y_coordinate, color, 
           template_id, text, text_color_branding_type, container_color_branding_type)
       VALUES 
-        (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)
     `;
 
     const insertPromises = Object.keys(template.templateTexts).map(async (textType) => {
       const text = template.templateTexts[textType];
 
       return this.executeQuery(sqlQueryInsertTemplateText, [
-        text.id,
+        randomUUID(),
         text.type,
         text.fontSize,
         text.fontFamily,
@@ -75,14 +75,15 @@ export class TemplateTextModel extends BaseModel {
     await Promise.all(insertPromises);
   }
 
-  public async bulkUpdateTemplateText(updatedTextFields: string[][], connection: any) {
+  public async bulkUpdateTemplateText(updatedTextFields: string[][], client: PoolClient) {
     const query = `
     UPDATE template_text
-    SET color = ?, container_color = ?
-    WHERE id = ?
+    SET color = $1, container_color = $2
+    WHERE id = $3
   `;
+
     for (const updatedTextField of updatedTextFields) {
-      await connection.query(query, updatedTextField);
+      await client.query(query, updatedTextField);
     }
   }
 
@@ -124,7 +125,7 @@ export class TemplateTextModel extends BaseModel {
   }
 
   public async createTemplateTexts(
-    connection: PoolConnection,
+    client: PoolClient, // Use PoolClient for transaction queries
     templates: Template[],
     branding: Branding,
     insertedTemplatesIds: string[]
@@ -137,7 +138,7 @@ export class TemplateTextModel extends BaseModel {
           border_style, border_color, container_color, language, x_coordinate, y_coordinate, color, 
           template_id, text, text_color_branding_type, container_color_branding_type)
       VALUES 
-        (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)
     `;
 
     const templateTextsValues: any[] = [];
@@ -189,7 +190,7 @@ export class TemplateTextModel extends BaseModel {
 
     if (templateTextsValues.length > 0) {
       for (const templateText of templateTextsValues) {
-        await connection.query(insertTemplateTextQuery, templateText);
+        await client.query(insertTemplateTextQuery, templateText); // Use PoolClient's query method for transaction
       }
     }
   }

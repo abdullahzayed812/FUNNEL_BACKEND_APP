@@ -105,6 +105,7 @@ export interface Image {
 export interface Video {
   id: string;
   filePath: string;
+  videoType: string;
   imageType: string;
 }
 

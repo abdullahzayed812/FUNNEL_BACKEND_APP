@@ -1,13 +1,10 @@
-import { Pool } from "mysql2/promise";
+import { Pool } from "pg";
 import { Branding } from "../types/entities";
 import { BaseModel } from "./baseModel";
 
 export class BrandingModel extends BaseModel {
-  protected pool: Pool;
-
   constructor(pool: Pool) {
     super(pool);
-    this.pool = pool;
   }
 
   public async getUserBranding(userId: string, projectId: string): Promise<Branding | undefined> {
@@ -15,48 +12,48 @@ export class BrandingModel extends BaseModel {
       SELECT 
         id,
         type,
-        primary_color AS primaryColor,
-        secondary_color AS secondaryColor,
-        additional_color AS additionalColor,
-        primary_font AS primaryFont,
-        secondary_font AS secondaryFont
+        primary_color AS "primaryColor",
+        secondary_color AS "secondaryColor",
+        additional_color AS "additionalColor",
+        primary_font AS "primaryFont",
+        secondary_font AS "secondaryFont"
       FROM branding 
-      WHERE user_id = ? AND project_id = ? AND type = 'Customized'
+      WHERE user_id = $1 AND project_id = $2 AND type = 'Customized'
       LIMIT 1;
     `;
 
     const branding = await this.executeQuery<Branding>(sqlQuery, [userId, projectId]);
-
-    return branding?.length > 0 ? branding[0] : undefined;
+    return branding?.[0];
   }
 
   public async getProjectBranding(projectId: string): Promise<Branding | undefined> {
     const sqlQuery = `
       SELECT 
         id,
-        primary_color AS primaryColor,
-        secondary_color AS secondaryColor,
-        additional_color AS additionalColor,
-        primary_font AS primaryFont,
-        secondary_font AS secondaryFont,
+        primary_color AS "primaryColor",
+        secondary_color AS "secondaryColor",
+        additional_color AS "additionalColor",
+        primary_font AS "primaryFont",
+        secondary_font AS "secondaryFont",
         type
       FROM branding
-      WHERE project_id = ? AND type = 'Default'
+      WHERE project_id = $1 AND type = 'Default'
       LIMIT 1;
     `;
 
     const branding = await this.executeQuery<Branding>(sqlQuery, [projectId]);
-
-    return branding?.length > 0 ? branding[0] : undefined;
+    return branding?.[0];
   }
 
   public async create(branding: Branding, projectId: string, userId: string): Promise<any> {
     const sqlQuery = `
-      INSERT INTO branding (id, type, primary_color, secondary_color, additional_color, primary_font, secondary_font, project_id, user_Id)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO branding (
+        id, type, primary_color, secondary_color, additional_color, 
+        primary_font, secondary_font, project_id, user_id
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
     `;
 
-    const result = await this.executeQuery(sqlQuery, [
+    return await this.executeQuery(sqlQuery, [
       branding.id,
       branding.type,
       branding.primaryColor,
@@ -67,23 +64,21 @@ export class BrandingModel extends BaseModel {
       projectId,
       userId,
     ]);
-
-    return result;
   }
 
   public async updateDefaultBranding(branding: Branding): Promise<any> {
     const sqlQuery = `
       UPDATE branding
       SET
-        primary_color = COALESCE(NULLIF(?, NULL), primary_color),
-        secondary_color = COALESCE(NULLIF(?, NULL), secondary_color),
-        additional_color = COALESCE(NULLIF(?, NULL), additional_color),
-        primary_font = COALESCE(NULLIF(?, NULL), primary_font),
-        secondary_font = COALESCE(NULLIF(?, NULL), secondary_font)
-      WHERE id = ? AND type = 'Default'
+        primary_color = COALESCE(NULLIF($1, NULL), primary_color),
+        secondary_color = COALESCE(NULLIF($2, NULL), secondary_color),
+        additional_color = COALESCE(NULLIF($3, NULL), additional_color),
+        primary_font = COALESCE(NULLIF($4, NULL), primary_font),
+        secondary_font = COALESCE(NULLIF($5, NULL), secondary_font)
+      WHERE id = $6 AND type = 'Default'
     `;
 
-    const result = await this.executeQuery(sqlQuery, [
+    return await this.executeQuery(sqlQuery, [
       branding.primaryColor ?? null,
       branding.secondaryColor ?? null,
       branding.additionalColor ?? null,
@@ -91,23 +86,21 @@ export class BrandingModel extends BaseModel {
       branding.secondaryFont ?? null,
       branding.id,
     ]);
-
-    return result;
   }
 
   public async updateUserBranding(branding: Branding): Promise<any> {
     const sqlQuery = `
       UPDATE branding
       SET 
-        primary_color = COALESCE(NULLIF(?, NULL), primary_color),
-        secondary_color = COALESCE(NULLIF(?, NULL), secondary_color),
-        additional_color = COALESCE(NULLIF(?, NULL), additional_color),
-        primary_font = COALESCE(NULLIF(?, NULL), primary_font),
-        secondary_font = COALESCE(NULLIF(?, NULL), secondary_font)
-      WHERE id = ? AND type = 'Customized'
+        primary_color = COALESCE(NULLIF($1, NULL), primary_color),
+        secondary_color = COALESCE(NULLIF($2, NULL), secondary_color),
+        additional_color = COALESCE(NULLIF($3, NULL), additional_color),
+        primary_font = COALESCE(NULLIF($4, NULL), primary_font),
+        secondary_font = COALESCE(NULLIF($5, NULL), secondary_font)
+      WHERE id = $6 AND type = 'Customized'
     `;
 
-    const result = await this.pool.query(sqlQuery, [
+    return await this.executeQuery(sqlQuery, [
       branding.primaryColor ?? null,
       branding.secondaryColor ?? null,
       branding.additionalColor ?? null,
@@ -115,7 +108,5 @@ export class BrandingModel extends BaseModel {
       branding.secondaryFont ?? null,
       branding.id,
     ]);
-
-    return result;
   }
 }

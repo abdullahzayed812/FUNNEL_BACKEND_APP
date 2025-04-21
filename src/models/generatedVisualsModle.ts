@@ -1,4 +1,4 @@
-import { Pool } from "mysql2/promise";
+import { Pool } from "pg";
 import { Image, Template } from "../types/entities";
 import { BaseModel } from "./baseModel";
 import { TemplateModel } from "./templateModel";
@@ -11,13 +11,13 @@ export class GeneratedVisualsModel extends BaseModel {
   public async getSelectedImages(userId: string, projectId: string) {
     const sqlQuery = `
       SELECT 
-        id,
-        file_path AS url,
-        image_type AS imageType,
-        is_selected AS isSelected
+        i.id,
+        i.file_path AS url,
+        i.image_type AS "imageType",
+        ui.is_selected AS "isSelected"
       FROM images i
       INNER JOIN user_images ui ON i.id = ui.image_id
-      WHERE ui.user_id = ? AND i.project_id = ? AND ui.is_selected = TRUE
+      WHERE ui.user_id = $1 AND i.project_id = $2 AND ui.is_selected = TRUE
     `;
 
     const images = await this.executeQuery<Image>(sqlQuery, [userId, projectId]);
@@ -28,21 +28,20 @@ export class GeneratedVisualsModel extends BaseModel {
   public async getSelectedVideos(userId: string, projectId: string) {
     const sqlQuery = `
       SELECT 
-        id,
-        file_path AS url,
-        video_type AS type,
-        is_selected AS isSelected
+        v.id,
+        v.file_path AS url,
+        v.video_type AS type,
+        uv.is_selected AS "isSelected"
       FROM videos v
-      INNER JOIN user_videos ui ON v.id = ui.video_id
-      WHERE ui.user_id = ? AND v.project_id = ? AND ui.is_selected = TRUE
+      INNER JOIN user_videos uv ON v.id = uv.video_id
+      WHERE uv.user_id = $1 AND v.project_id = $2 AND uv.is_selected = TRUE
     `;
 
-    const images = await this.executeQuery<Image>(sqlQuery, [userId, projectId]);
+    const videos = await this.executeQuery<Image>(sqlQuery, [userId, projectId]);
 
-    return images;
+    return videos;
   }
 
-  // Get selected templates for a specific project and user, including headline, punchline, and CTA texts
   public async getSelectedTemplates(userId: string, projectId: string) {
     const sqlQuery = `
       SELECT 
@@ -51,12 +50,13 @@ export class GeneratedVisualsModel extends BaseModel {
         t.type,
         t.frame_svg,
         t.default_primary,
-        t.default_secondary_color AS defaultSecondaryColor,
+        t.default_secondary_color AS "defaultSecondaryColor",
         t.created_at
       FROM templates t
       INNER JOIN user_templates ut ON t.id = ut.template_id
-      WHERE ut.user_id = ?
-      AND t.project_id = ? AND ut.is_selected = TRUE
+      WHERE ut.user_id = $1
+        AND t.project_id = $2
+        AND ut.is_selected = TRUE
     `;
 
     const templates = await this.executeQuery<Template>(sqlQuery, [userId, projectId]);

@@ -1,4 +1,4 @@
-import { Pool } from "mysql2/promise";
+import { Pool } from "pg";
 import { Branding, Template, TemplateText } from "../types/entities";
 import { BaseModel } from "./baseModel";
 import { randomUUID } from "crypto";
@@ -29,12 +29,12 @@ export class TemplateModel extends BaseModel {
         t.tag,
         t.frame_svg,
         t.default_primary,
-        t.default_secondary_color AS defaultSecondary,
+        t.default_secondary_color AS "defaultSecondary",
         t.created_at,
         CASE
-          WHEN ut.user_id = ? THEN ut.is_selected
+          WHEN ut.user_id = $1 THEN ut.is_selected
           ELSE NULL
-        END AS isSelected
+        END AS "isSelected"
       FROM templates t
       LEFT JOIN user_templates ut ON t.id = ut.template_id
       WHERE t.type = 'Default'
@@ -57,12 +57,12 @@ export class TemplateModel extends BaseModel {
         t.type,
         t.frame_svg,
         t.default_primary,
-        t.default_secondary_color AS defaultSecondary,
+        t.default_secondary_color AS "defaultSecondary",
         t.created_at,
         CASE
-          WHEN ut.user_id = ? THEN ut.is_selected
+          WHEN ut.user_id = $1 THEN ut.is_selected
           ELSE NULL
-        END AS isSelected
+        END AS "isSelected"
       FROM templates t
       LEFT JOIN user_templates ut ON t.id = ut.template_id
       WHERE t.type = 'Branded'
@@ -85,16 +85,16 @@ export class TemplateModel extends BaseModel {
         t.type,
         t.frame_svg,
         t.default_primary,
-        t.default_secondary_color AS defaultSecondary,
+        t.default_secondary_color AS "defaultSecondary",
         t.created_at,
         CASE
-          WHEN ut.user_id = ? THEN ut.is_selected
+          WHEN ut.user_id = $1 THEN ut.is_selected
           ELSE NULL
-        END AS isSelected
+        END AS "isSelected"
       FROM templates t
       LEFT JOIN user_templates ut ON t.id = ut.template_id
-      WHERE t.user_id = ? 
-        AND t.project_id = ? 
+      WHERE t.user_id = $2 
+        AND t.project_id = $3 
         AND t.type = 'Customized'
     `;
 
@@ -112,7 +112,8 @@ export class TemplateModel extends BaseModel {
       INSERT INTO templates 
         (id, name, type, tag, frame_svg, default_primary, default_secondary_color, project_id, user_id)
       VALUES 
-        (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+      RETURNING *;
     `;
 
     const createdTemplate = await this.executeQuery(sqlQueryInsertTemplate, [
@@ -135,7 +136,7 @@ export class TemplateModel extends BaseModel {
 
   public async getById(templateId: string) {
     const sqlQuery = `
-      SELECT * FROM templates WHERE id = ?
+      SELECT * FROM templates WHERE id = $1
     `;
 
     const templates = await this.executeQuery<Template>(sqlQuery, [templateId]);
@@ -145,7 +146,7 @@ export class TemplateModel extends BaseModel {
 
   public async getByUserId(userId: string, projectId: string) {
     const sqlQuery = `
-      SELECT id FROM templates WHERE user_id = ? AND project_id = ?
+      SELECT id FROM templates WHERE user_id = $1 AND project_id = $2
     `;
 
     const templates = await this.executeQuery<Template>(sqlQuery, [userId, projectId]);
@@ -155,8 +156,8 @@ export class TemplateModel extends BaseModel {
 
   public async checkUserTemplate(templateId: string, userId: string) {
     const sqlQuery = `
-    SELECT template_id AS id FROM user_templates WHERE template_id = ? AND user_id = ?
-  `;
+      SELECT template_id AS id FROM user_templates WHERE template_id = $1 AND user_id = $2
+    `;
 
     const images = await this.executeQuery<{ id: string }>(sqlQuery, [templateId, userId]);
 
@@ -166,10 +167,11 @@ export class TemplateModel extends BaseModel {
   public async update(templateId: string, status: boolean, userId: string) {
     const sqlQueryUpdateUserTemplate = `
       UPDATE user_templates
-      SET is_selected = ? 
-      WHERE template_id = ?
-      AND user_id = ?
+      SET is_selected = $1
+      WHERE template_id = $2
+        AND user_id = $3
     `;
+
     const result = await this.executeQuery(sqlQueryUpdateUserTemplate, [status, templateId, userId]);
 
     return result;
@@ -200,14 +202,14 @@ export class TemplateModel extends BaseModel {
 
   public async delete(templateId: string) {
     const sqlQuery = `
-      DELETE FROM templates
-      WHERE id = ? AND type = 'Customized'
-    `;
+    DELETE FROM templates
+    WHERE id = $1 AND type = 'Customized'
+  `;
 
     const sqlQueryDeleteUserTemplate = `
-      DELETE FROM user_templates
-      WHERE template_id = ?
-    `;
+    DELETE FROM user_templates
+    WHERE template_id = $1
+  `;
 
     const result1 = await this.executeQuery(sqlQuery, [templateId]);
     const result2 = await this.executeQuery(sqlQueryDeleteUserTemplate, [templateId]);
@@ -220,7 +222,7 @@ export class TemplateModel extends BaseModel {
       INSERT INTO user_templates 
         (user_id, template_id, is_selected)
       VALUES
-        (?, ?, ?) 
+        ($1, $2, $3)
     `;
 
     const result = await this.executeQuery(sqlQuery, [userId, templateId, status]);
@@ -256,8 +258,8 @@ export class TemplateModel extends BaseModel {
     secondaryColor: string,
     additionalColor: string
   ) {
-    const connection = await this.pool.getConnection();
-    await connection.beginTransaction();
+    const connection = await this.pool.connect();
+    await connection.query("BEGIN");
 
     try {
       const updatedTemplates: string[][] = [];
@@ -279,10 +281,10 @@ export class TemplateModel extends BaseModel {
       await this.bulkUpdateTemplates(updatedTemplates, connection);
       await this.templateTextModel.bulkUpdateTemplateText(updatedTextFields, connection);
 
-      await connection.commit();
+      await connection.query("COMMIT");
       console.log("Bulk templates and text fields updated successfully.");
     } catch (error: any) {
-      await connection.rollback();
+      await connection.query("ROLLBACK");
       console.error("Error during bulk update:", error.message);
       throw new AppError("Bulk update failed");
     } finally {
@@ -313,10 +315,10 @@ export class TemplateModel extends BaseModel {
 
   private async bulkUpdateTemplates(updatedTemplates: string[][], connection: any) {
     const query = `
-    UPDATE templates
-    SET frame_svg = ?
-    WHERE user_id = ? AND id = ?
-  `;
+      UPDATE templates
+      SET frame_svg = $1
+      WHERE user_id = $2 AND id = $3
+    `;
     for (const updatedTemplate of updatedTemplates) {
       await connection.query(query, updatedTemplate);
     }
@@ -330,8 +332,8 @@ export class TemplateModel extends BaseModel {
       return;
     }
 
-    const connection = await this.pool.getConnection();
-    await connection.beginTransaction();
+    const connection = await this.pool.connect();
+    await connection.query("BEGIN");
 
     try {
       const customizedTemplates = this.prepareTemplates(defaultTemplates, userId, projectId, branding, "Customized");
@@ -341,7 +343,7 @@ export class TemplateModel extends BaseModel {
         INSERT INTO templates 
           (id, name, tag, type, frame_svg, default_primary, default_secondary_color, project_id, user_id)
         VALUES 
-          (?, ?, ?, ?, ?, ?, ?, ?, ?)
+          ($1, $2, $3, $4, $5, $6, $7, $8, $9)
       `;
 
       for (const customizedTemplate of customizedTemplates) {
@@ -353,11 +355,10 @@ export class TemplateModel extends BaseModel {
       const templatesLogos = defaultTemplates.map((dt: Template) => dt.templateLogos);
       await this.templateLogoModel.createTemplateLogos(connection, templatesLogos, customizedTemplatesIds);
 
-      await connection.commit();
+      await connection.query("COMMIT");
       console.log("Customized templates created successfully.");
     } catch (error: any) {
-      // Rollback on error
-      await connection.rollback();
+      await connection.query("ROLLBACK");
       console.error("Error during customized templates creation:", error.message);
       throw new AppError("Failed to create customized templates");
     } finally {
@@ -390,20 +391,18 @@ export class TemplateModel extends BaseModel {
       return;
     }
 
-    const connection = await this.pool.getConnection();
-    await connection.beginTransaction();
+    const connection = await this.pool.connect();
+    await connection.query("BEGIN");
 
     try {
       const brandedTemplates = this.prepareTemplates(defaultTemplates, userId, projectId, branding, "Branded");
       const brandedTemplatesIds = brandedTemplates.map((b) => b[0]);
 
-      // console.log(brandedTemplatesIds);
-
       const insertTemplateQuery = `
         INSERT INTO templates 
           (id, name, tag, type, frame_svg, default_primary, default_secondary_color, project_id, user_id)
         VALUES 
-          (?, ?, ?, ?, ?, ?, ?, ?, ?)
+          ($1, $2, $3, $4, $5, $6, $7, $8, $9)
       `;
 
       for (const brandedTemplate of brandedTemplates) {
@@ -415,11 +414,10 @@ export class TemplateModel extends BaseModel {
       const templatesLogos = defaultTemplates.map((dt: Template) => dt.templateLogos);
       await this.templateLogoModel.createTemplateLogos(connection, templatesLogos, brandedTemplatesIds);
 
-      await connection.commit();
+      await connection.query("COMMIT");
       console.log("Branded templates and text properties created successfully.");
     } catch (error: any) {
-      // Rollback on error
-      await connection.rollback();
+      await connection.query("ROLLBACK");
       console.error("Error during branded templates creation:", error.message);
       throw new AppError("Failed to create branded templates");
     } finally {
@@ -430,16 +428,16 @@ export class TemplateModel extends BaseModel {
   private async getUserTemplates(userId: string, projectId: string) {
     const sqlQuery = `
       SELECT 
-      t.id,
-      t.name,
-      t.type,
-      t.frame_svg,
-      t.default_primary,
-      t.default_secondary_color AS defaultSecondary,
-      t.created_at
+        t.id,
+        t.name,
+        t.type,
+        t.frame_svg,
+        t.default_primary,
+        t.default_secondary_color AS defaultSecondary,
+        t.created_at
       FROM templates t
-      WHERE user_id = ?
-        AND project_id = ?
+      WHERE user_id = $1
+        AND project_id = $2
         AND t.type != 'Default'
     `;
 

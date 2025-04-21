@@ -1,23 +1,21 @@
-import mysql from "mysql2/promise";
+import { Pool } from "pg";
 
 // DB Configuration for Dependency Injection
 export class DBConfig {
   private static instance: DBConfig;
-  private pool: mysql.Pool;
+  private pool: Pool;
 
   private constructor() {
-    this.pool = mysql.createPool({
+    this.pool = new Pool({
       host: process.env.DB_HOST || "localhost",
-      user: process.env.DB_USER || "abdo",
-      password: process.env.DB_PASSWORD || "password",
+      user: process.env.DB_USERNAME || "postgres",
+      password: process.env.DB_PASSWORD || "asdfgASDFG@#6",
       database: process.env.DB_NAME || "funnel_db",
-      waitForConnections: true, // Wait for an available connection if all are in use
-      connectionLimit: 10, // Maximum number of connections allowed in the pool
-      queueLimit: 0, // Unlimited waiting requests
+      port: Number(process.env.DB_PORT) || 5532,
+      max: 10,
     });
   }
 
-  // Singleton pattern to ensure only one DBConfig instance
   public static getInstance(): DBConfig {
     if (!DBConfig.instance) {
       DBConfig.instance = new DBConfig();
@@ -25,7 +23,7 @@ export class DBConfig {
     return DBConfig.instance;
   }
 
-  public getPool(): mysql.Pool {
+  public getPool(): Pool {
     return this.pool;
   }
 }

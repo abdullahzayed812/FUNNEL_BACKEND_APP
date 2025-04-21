@@ -1,4 +1,4 @@
-import { Pool } from "mysql2/promise";
+import { Pool } from "pg";
 import { Project } from "../types/entities";
 import { AppError } from "../configs/error";
 import { ERRORS } from "../configs/error";
@@ -15,16 +15,16 @@ export class ProjectModel extends BaseModel {
 
   private async projectExists(projectId: string): Promise<boolean> {
     if (!projectId || typeof projectId !== "string") {
-      throw new AppError(ERRORS.PROJECT_ID_NOT_SENT, 400); // Bad request error
+      throw new AppError(ERRORS.PROJECT_ID_NOT_SENT, 400);
     }
 
-    const result = await this.executeQuery("SELECT id FROM projects WHERE id = ?", [projectId]);
+    const result = await this.executeQuery("SELECT id FROM projects WHERE id = $1", [projectId]);
     return result.length > 0;
   }
 
   public async list(userId: string, userRole: string) {
     const sqlQueryUserProjects = `
-      SELECT * FROM projects WHERE user_id = ?
+      SELECT * FROM projects WHERE user_id = $1
     `;
     const sqlQueryDefaultProjects = `
       SELECT * FROM projects WHERE type = 'Default'
@@ -41,7 +41,9 @@ export class ProjectModel extends BaseModel {
   }
 
   public async get(projectId: string): Promise<Project> {
-    const sqlQuery = `SELECT id, type FROM projects WHERE id = ?`;
+    const sqlQuery = `
+      SELECT id, type FROM projects WHERE id = $1
+    `;
     const result = await this.executeQuery<Project>(sqlQuery, [projectId]);
 
     return result[0];
@@ -49,21 +51,20 @@ export class ProjectModel extends BaseModel {
 
   public async forward(projectId: string, usersIds: string[]) {
     if (!projectId || typeof projectId !== "string") {
-      return new AppError(ERRORS.PROJECT_ID_NOT_SENT, 400); // Bad request error
+      return new AppError(ERRORS.PROJECT_ID_NOT_SENT, 400);
     }
 
     const exists = await this.projectExists(projectId);
     if (!exists) {
-      return new AppError(ERRORS.PROJECT_NOT_FOUND, 404); // Not found error
+      return new AppError(ERRORS.PROJECT_NOT_FOUND, 404);
     }
 
     const sqlQuery = `
       INSERT INTO user_projects (project_id, user_id)
-      VALUES ?`;
+      VALUES ${usersIds.map((_, i) => `($1, $${i + 2})`).join(", ")}
+    `;
 
-    const values = usersIds.map((userId) => [projectId, userId]);
-
-    return this.executeQuery(sqlQuery, values);
+    return this.executeQuery(sqlQuery, [projectId, ...usersIds]);
   }
 
   public async create(project: Project, userId: string, userRole: string) {
@@ -71,7 +72,7 @@ export class ProjectModel extends BaseModel {
 
     const sqlQueryInsertProject = `
       INSERT INTO projects (id, name, description, website, user_id, type)
-      VALUES (?,?,?,?,?,?)
+      VALUES ($1, $2, $3, $4, $5, $6)
     `;
 
     return await this.executeQuery(sqlQueryInsertProject, [

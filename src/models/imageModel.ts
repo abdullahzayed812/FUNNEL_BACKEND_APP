@@ -1,4 +1,4 @@
-import { Pool } from "mysql2/promise";
+import { Pool } from "pg";
 import { Image } from "../types/entities";
 import { BaseModel } from "./baseModel";
 
@@ -17,22 +17,22 @@ export class ImageModel extends BaseModel {
         i.file_path AS url,
         i.image_type AS type,
         CASE
-          WHEN ui.user_id = ? THEN ui.is_selected
+          WHEN ui.user_id = $1 THEN ui.is_selected
           ELSE FALSE
-        END AS isSelected
+        END AS "isSelected"
       FROM images i
       LEFT JOIN user_images ui ON i.id = ui.image_id
-      WHERE i.project_id = ?
-        AND (i.image_type = 'Default' OR (i.image_type = 'Customized' AND i.user_id = ?))
+      WHERE i.project_id = $2
+        AND (i.image_type = 'Default' OR (i.image_type = 'Customized' AND i.user_id = $1))
     `;
 
-    return await this.executeQuery<Image>(sqlQuery, [userId, projectId, userId]);
+    return await this.executeQuery<Image>(sqlQuery, [userId, projectId]);
   }
 
   public async create(image: Image, userId: string, projectId: string) {
     const sqlQuery = `
       INSERT INTO images (id, file_path, image_type, project_id, user_id)
-      VALUES (?, ?, ?, ?, ?)
+      VALUES ($1, $2, $3, $4, $5)
     `;
 
     return await this.executeQuery(sqlQuery, [image.id, image.filePath, image.imageType, projectId, userId]);
@@ -40,9 +40,9 @@ export class ImageModel extends BaseModel {
 
   public async update(imageId: string, status: boolean) {
     const sqlQuery = `
-      UPDATE user_images ui
-      SET is_selected = ?
-      WHERE ui.image_id = ?
+      UPDATE user_images
+      SET is_selected = $1
+      WHERE image_id = $2
     `;
 
     return await this.executeQuery(sqlQuery, [status, imageId]);
@@ -50,7 +50,7 @@ export class ImageModel extends BaseModel {
 
   public async delete(imageId: string) {
     const sqlQueryDeleteFromImages = `
-      DELETE FROM images WHERE id = ? AND image_type = 'Customized'
+      DELETE FROM images WHERE id = $1 AND image_type = 'Customized'
     `;
 
     return await this.executeQuery(sqlQueryDeleteFromImages, [imageId]);
@@ -60,9 +60,9 @@ export class ImageModel extends BaseModel {
     const sqlQuery = `
       SELECT
         id,
-        file_path AS filePath,
-        image_type AS imageType
-      FROM images WHERE id = ?
+        file_path AS "filePath",
+        image_type AS "imageType"
+      FROM images WHERE id = $1
     `;
     const images = await this.executeQuery<Image>(sqlQuery, [imageId]);
 
@@ -73,9 +73,9 @@ export class ImageModel extends BaseModel {
     const sqlQuery = `
       SELECT
         id,
-        file_path AS filePath,
-        image_type AS imageType
-      FROM images WHERE id = ? AND user_id = ?
+        file_path AS "filePath",
+        image_type AS "imageType"
+      FROM images WHERE id = $1 AND user_id = $2
     `;
     const images = await this.executeQuery<Image>(sqlQuery, [imageId, userId]);
 
@@ -84,7 +84,7 @@ export class ImageModel extends BaseModel {
 
   public async checkUserImage(imageId: string, userId: string) {
     const sqlQuery = `
-      SELECT image_id AS id FROM user_images WHERE image_id = ? AND user_id = ?
+      SELECT image_id AS id FROM user_images WHERE image_id = $1 AND user_id = $2
     `;
 
     const images = await this.executeQuery<{ id: string }>(sqlQuery, [imageId, userId]);
@@ -95,7 +95,7 @@ export class ImageModel extends BaseModel {
   public async addUserImage(imageId: string, userId: string, status: boolean) {
     const sqlQuery = `
       INSERT INTO user_images (user_id, image_id, is_selected)
-      VALUES (?,?,?)
+      VALUES ($1, $2, $3)
     `;
 
     return await this.executeQuery(sqlQuery, [userId, imageId, status]);

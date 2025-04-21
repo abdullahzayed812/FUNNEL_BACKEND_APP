@@ -1,4 +1,4 @@
-import { Pool } from "mysql2/promise";
+import { Pool, QueryResultRow } from "pg";
 import { AppError } from "../configs/error";
 
 export class BaseModel {
@@ -8,15 +8,15 @@ export class BaseModel {
     this.pool = pool;
   }
 
-  protected async executeQuery<T>(query: string, params: any[] = []): Promise<T[]> {
-    const connection = await this.pool.getConnection();
+  protected async executeQuery<T extends QueryResultRow>(query: string, params: any[] = []): Promise<T[]> {
+    const client = await this.pool.connect();
     try {
-      const [result] = await connection.query(query, params);
-      return result as T[];
+      const result = await client.query<T>(query, params);
+      return result.rows;
     } catch (error: any) {
       throw new AppError(error.message);
     } finally {
-      connection.release();
+      client.release();
     }
   }
 }
