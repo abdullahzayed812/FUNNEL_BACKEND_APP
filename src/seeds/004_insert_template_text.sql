@@ -1,5 +1,3 @@
-
-
 INSERT INTO template_text 
 (id, type, font_size, font_family, font_weight, text_decoration, font_style, border_radius, border_width, border_style, border_color, container_color, language, x_coordinate, y_coordinate, color, template_id, text, text_color_branding_type, container_color_branding_type) 
 VALUES
