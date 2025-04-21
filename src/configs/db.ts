@@ -1,9 +1,10 @@
-import { Pool } from "pg";
+import pg from "pg";
+const { Pool } = pg;
 
 // DB Configuration for Dependency Injection
 export class DBConfig {
   private static instance: DBConfig;
-  private pool: Pool;
+  private pool: InstanceType<typeof Pool>; // Correct usage for the type
 
   private constructor() {
     this.pool = new Pool({
@@ -23,7 +24,7 @@ export class DBConfig {
     return DBConfig.instance;
   }
 
-  public getPool(): Pool {
+  public getPool(): InstanceType<typeof Pool> {
     return this.pool;
   }
 }

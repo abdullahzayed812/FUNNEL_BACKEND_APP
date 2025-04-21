@@ -108,19 +108,19 @@ export async function createServer(logRequests: boolean = true) {
     const { auth, method, url, requireProjectId, requireImageId } = ENDPOINT_CONFIGS[entry as Endpoints];
     const controller = CONTROLLERS[entry as Endpoints];
 
-    const middlewares = [authMiddleware.jwtParse];
+    // const middlewares = [authMiddleware.jwtParse];
 
-    if (auth) {
-      middlewares.push(authMiddleware.enforceJwt);
-    }
-    if (requireProjectId) {
-      middlewares.push(authMiddleware.checkProjectId);
-    }
-    if (requireImageId) {
-      middlewares.push(authMiddleware.checkImageId);
-    }
+    // if (auth) {
+    //   middlewares.push(authMiddleware.enforceJwt);
+    // }
+    // if (requireProjectId) {
+    //   middlewares.push(authMiddleware.checkProjectId);
+    // }
+    // if (requireImageId) {
+    //   middlewares.push(authMiddleware.checkImageId);
+    // }
 
-    app[method](url, ...middlewares, expressAsyncHandler(controller));
+    app[method](url, expressAsyncHandler(controller));
   });
 
   app.use(errorHandlerMiddleware);
