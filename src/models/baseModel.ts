@@ -9,6 +9,7 @@ export class BaseModel {
 
   protected async executeQuery<T extends QueryResultRow>(query: string, params: any[] = []): Promise<T[]> {
     const client = await this.pool.connect();
+    // console.log(client);
     try {
       const result = await client.query<T>(query, params);
       return result.rows;

@@ -8,7 +8,7 @@ export class DBConfig {
 
   private constructor() {
     this.pool = new Pool({
-      host: process.env.DB_HOST || "localhost",
+      host: process.env.DB_HOST || "3.71.248.31",
       user: process.env.DB_USERNAME || "postgres",
       password: process.env.DB_PASSWORD || "asdfgASDFG@#6",
       database: process.env.DB_NAME || "funnel_db",

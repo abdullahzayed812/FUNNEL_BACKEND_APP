@@ -15,6 +15,7 @@ export class ProjectController {
 
       ResponseHandler.handleSuccess(res, { projects });
     } catch (error: any) {
+      console.log(error);
       ResponseHandler.handleError(res, error.message);
     }
   };

@@ -6,10 +6,29 @@ import { UserModel } from "../models/userModel";
 import jwt from "jsonwebtoken";
 import { ProjectModel } from "../models/projectModel";
 import { ImageModel } from "../models/imageModel";
+import axios from "axios";
 
 export class AuthMiddleware {
-  constructor(private userModel: UserModel, private projectModel: ProjectModel, private imageModel: ImageModel) {
-  }
+  constructor(private userModel: UserModel, private projectModel: ProjectModel, private imageModel: ImageModel) {}
+
+  public authenticateToken: ExpressHandler = async (req, res, next) => {
+    const authHeader = req.headers["authorization"];
+    const token = authHeader && authHeader.split(" ")[1];
+
+    if (!token) return res.sendStatus(401);
+
+    try {
+      const response = await axios.get("https://djangoapi.rentup.com.eg/api/accounts/profile/", {
+        headers: { Authorization: `Token ${token}` },
+      });
+
+      next();
+    } catch (error: any) {
+      console.log(error);
+      console.log(error.message);
+      res.sendStatus(403);
+    }
+  };
 
   public jwtParse: ExpressHandler = async (req, res, next) => {
     const token = req.headers.authorization?.split(" ")[1];
